@@ -5,13 +5,13 @@ module.exports = class chainbet {
      let script = [
        BITBOX.Script.opcodes.OP_RETURN,
        // 4 byte prefix
-       Buffer.from('54454200', 'hex'),
+       Buffer.from('00424554', 'hex'),
        // protocol id
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // version id
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // phase
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // bet type
        Buffer.from(type, 'hex'),
        // amount
@@ -26,13 +26,13 @@ module.exports = class chainbet {
      let script = [
        BITBOX.Script.opcodes.OP_RETURN,
        // 4 byte prefix
-       Buffer.from('54454200', 'hex'),
+       Buffer.from('00424554', 'hex'),
        // protocol id
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // version id
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // phase
-       Buffer.from('0200', 'hex'),
+       Buffer.from('02', 'hex'),
        // bet tx id
        Buffer.from(betTxId, 'hex'),
        // multisig Pub Key
@@ -45,13 +45,13 @@ module.exports = class chainbet {
      let script = [
        BITBOX.Script.opcodes.OP_RETURN,
        // 4 byte prefix
-       Buffer.from('54454200', 'hex'),
+       Buffer.from('00424554', 'hex'),
        // protocol id
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // version id
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // phase
-       Buffer.from('0300', 'hex'),
+       Buffer.from('03', 'hex'),
        // bet tx id
        Buffer.from(betTxId, 'hex'),
        // Participant tx id
@@ -68,13 +68,13 @@ module.exports = class chainbet {
      let script = [
        BITBOX.Script.opcodes.OP_RETURN,
        // 4 byte prefix
-       Buffer.from('54454200', 'hex'),
+       Buffer.from('00424554', 'hex'),
        // protocol id
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // version id
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // phase
-       Buffer.from('0400', 'hex'),
+       Buffer.from('04', 'hex'),
        // bet tx id
        Buffer.from(betTxId, 'hex'),
        // Participant tx id
@@ -94,13 +94,13 @@ module.exports = class chainbet {
      let script = [
        BITBOX.Script.opcodes.OP_RETURN,
        // 4 byte prefix
-       Buffer.from('54454200', 'hex'),
+       Buffer.from('00424554', 'hex'),
        // protocol id
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // version id
-       Buffer.from('0100', 'hex'),
+       Buffer.from('01', 'hex'),
        // phase
-       Buffer.from('0600', 'hex'),
+       Buffer.from('06', 'hex'),
        // bet tx id
        Buffer.from(betTxId, 'hex'),
        // Secret value
@@ -114,7 +114,7 @@ module.exports = class chainbet {
      let decoded = BITBOX.Script.decode(fromASM);
      let results = {};
      let phase = decoded[4].toString('hex');
-     if(phase === '0100') {
+     if(phase === '01') {
        // phase 1
        results.phase = 1;
        // type 1
@@ -123,14 +123,14 @@ module.exports = class chainbet {
        results.amount = decoded[6].toString();
        // target address
        results.address = decoded[7].toString()
-     } else if(phase === '0200') {
+     } else if(phase === '02') {
        // phase 2
        results.phase = 2;
        // Bet Txn Id
        results.betTxId = decoded[5].toString();
        // Multi-sig Pub Key
        results.multisigPubKey = decoded[6].toString()
-     } else if(phase === '0300') {
+     } else if(phase === '03') {
        // phase 3
        results.phase = 3;
        // Bet Txn Id
@@ -141,7 +141,7 @@ module.exports = class chainbet {
        results.hostP2SHId = decoded[8].toString();
        // Host multsig pubkey
        results.hostMultisigPubKey = decoded[7].toString();
-     } else if(phase === '0400') {
+     } else if(phase === '04') {
        // phase 4
        results.phase = 4;
        // Bet Txn Id
@@ -152,8 +152,8 @@ module.exports = class chainbet {
        results.participantSig1 = decoded[7].toString();
        // Participant Signature 2
        results.participantSig2 = decoded[8].toString();
-     } else if(phase === '0500') {
-     } else if(phase === '0600') {
+     } else if(phase === '05') {
+     } else if(phase === '06') {
        // phase 6
        results.phase = 6;
        // Bet Txn Id
