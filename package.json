@@ -1,7 +1,7 @@
 {
   "name": "chainbet",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.0.2",
+  "description": "Utility methods for reading/writing to the BCH blockchain per the ChainBet protocol",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,6 +9,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "bitbox-cli": "^1.0.0"
+    "bitbox-cli": "1.0.1"
   }
 }
