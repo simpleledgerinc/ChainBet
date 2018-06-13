@@ -17,7 +17,7 @@ module.exports = class chainbet {
        // amount
        Buffer.from(amount.toString()),
        // target address
-       Buffer.from(targetAddress),
+       Buffer.from(BITBOX.Crypto.hash160(targetAddress)),
      ];
      return BITBOX.Script.encode(script)
    }
