@@ -1,47 +1,57 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
-module.exports = class chainbet {
-   encodePhase1(type, amount, targetAddress) {
-     let script = [
-       BITBOX.Script.opcodes.OP_RETURN,
-       // 4 byte prefix
-       Buffer.from('00424554', 'hex'),
-       // protocol id
-       Buffer.from('01', 'hex'),
-       // version id
-       Buffer.from('01', 'hex'),
-       // phase
-       Buffer.from('01', 'hex'),
-       // bet type
-       Buffer.from(type, 'hex'),
-       // amount
-       Buffer.from(amount.toString()),
-       // target address
-       Buffer.from(targetAddress),
-     ];
-     return BITBOX.Script.encode(script)
-   }
+module.exports = class Chainbet {
 
-   encodePhase2(betTxId, multisigPubKey) {
+  static amount2Hex(amount) {
+    var hex = amount.toString(16)
+    const len = hex.length
+    for (let i = 0; i < 16 - len; i++) {
+      hex = '0' + hex;
+    }
+    return hex
+  }
+
+  static encodePhase1(type, amount, targetAddress) {
+    let script = [
+      BITBOX.Script.opcodes.OP_RETURN,
+      // 4 byte prefix
+      Buffer.from('00424554', 'hex'),
+      // protocol id
+      Buffer.from('01', 'hex'),
+      // version id
+      Buffer.from('01', 'hex'),
+      // phase
+      Buffer.from('01', 'hex'),
+      // bet type
+      Buffer.from(type, 'hex'),  
+      // amount
+      Buffer.from(this.amount2Hex(amount)),  // check for padding
+      // target address
+      Buffer.from(targetAddress),
+    ];
+    return BITBOX.Script.encode(script)
+  }
+
+   static encodePhase2(betTxId, multisigPubKey) {
      let script = [
        BITBOX.Script.opcodes.OP_RETURN,
        // 4 byte prefix
        Buffer.from('00424554', 'hex'),
-       // protocol id
+       // 1 byte protocol id
        Buffer.from('01', 'hex'),
-       // version id
+       // 1 byte version id
        Buffer.from('01', 'hex'),
-       // phase
+       // 1 byte phase
        Buffer.from('02', 'hex'),
        // bet tx id
        Buffer.from(betTxId, 'hex'),
        // multisig Pub Key
-       Buffer.from(multisigPubKey),
+       Buffer.from(multisigPubKey),  // check for padding
      ];
      return BITBOX.Script.encode(script)
    }
 
-   encodePhase3(betTxId, participantTxId, hostP2SHId, hostMultisigPubKey) {
+   static encodePhase3(betTxId, participantTxId, hostP2SHId, hostMultisigPubKey) {
      let script = [
        BITBOX.Script.opcodes.OP_RETURN,
        // 4 byte prefix
@@ -59,12 +69,12 @@ module.exports = class chainbet {
        // host P2SH id
        Buffer.from(hostP2SHId, 'hex'),
        // host Multisig Pub Key
-       Buffer.from(hostMultisigPubKey, 'hex'),
+       Buffer.from(hostMultisigPubKey, 'hex'),   // check for padding
      ];
      return BITBOX.Script.encode(script)
    }
 
-   encodePhase4(betTxId, participantTxId, participantSig1, participantSig2) {
+   static encodePhase4(betTxId, participantTxId, participantSig1, participantSig2) {
      let script = [
        BITBOX.Script.opcodes.OP_RETURN,
        // 4 byte prefix
@@ -80,17 +90,18 @@ module.exports = class chainbet {
        // Participant tx id
        Buffer.from(participantTxId, 'hex'),
        // Participant signature 1
-       Buffer.from(participantSig1, 'hex'),
+       Buffer.from(participantSig1, 'hex'),  // check for padding
        // Participant signature 2
-       Buffer.from(participantSig2, 'hex'),
+       Buffer.from(participantSig2, 'hex'),  // check for padding
      ];
      return BITBOX.Script.encode(script)
    }
 
-   encodePhase5() {
+   static encodePhase5() {
+     // TODO 
    }
 
-   encodePhase6(betTxId, secretValue) {
+   static encodePhase6(betTxId, secretValue) {
      let script = [
        BITBOX.Script.opcodes.OP_RETURN,
        // 4 byte prefix
@@ -109,7 +120,7 @@ module.exports = class chainbet {
      return BITBOX.Script.encode(script)
    }
 
-   decode(op_return) {
+   static decode(op_return) {
      let fromASM = BITBOX.Script.fromASM(op_return);
      let decoded = BITBOX.Script.decode(fromASM);
      let results = {};
