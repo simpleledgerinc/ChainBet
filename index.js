@@ -1,6 +1,50 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 module.exports = class Chainbet {
+   encodePhase1(type, amount, targetAddress) {
+     let hash160 = BITBOX.Crypto.hash160(targetAddress);
+     let arr = [...hash160];
+     let script = [
+       BITBOX.Script.opcodes.OP_RETURN,
+
+       // next 4 bytes will be random data
+       '0x04',
+
+       // 4 byte prefix
+       '0x00',
+       '0x42',
+       '0x45',
+       '0x54',
+       BITBOX.Script.opcodes.OP_PUSHDATA1,
+       `0x20`,
+
+       // version id
+       '0x01',
+
+       // phase
+       '0x01',
+
+       // bet type
+       type,
+
+       // amount
+       '0x00',
+       '0x00',
+       '0x00',
+       '0x31',
+       '0x32',
+       '0x33',
+       '0x34',
+       '0x35',
+       //
+     ];
+
+     arr.forEach((item, index) => {
+       script.push(item);
+     })
+
+     return BITBOX.Script.encode(script)
+   }
 
   static amount2Hex(amount) {
     var hex = amount.toString(16)
@@ -23,7 +67,7 @@ module.exports = class Chainbet {
       // phase
       Buffer.from('01', 'hex'),
       // bet type
-      Buffer.from(type, 'hex'),  
+      Buffer.from(type, 'hex'),
       // amount
       Buffer.from(this.amount2Hex(amount)),  // check for padding
       // target address
@@ -98,7 +142,7 @@ module.exports = class Chainbet {
    }
 
    static encodePhase5() {
-     // TODO 
+     // TODO
    }
 
    static encodePhase6(betTxId, secretValue) {
@@ -120,28 +164,28 @@ module.exports = class Chainbet {
      return BITBOX.Script.encode(script)
    }
 
-   static decode(op_return) {
-     let fromASM = BITBOX.Script.fromASM(op_return);
-     let decoded = BITBOX.Script.decode(fromASM);
+   decode(op_return) {
+     let data = op_return.split(" ");
+     let buf = Buffer.from(data[2], 'hex');
      let results = {};
-     let phase = decoded[4].toString('hex');
-     if(phase === '01') {
+     let phase = buf[1].toString(16);
+     if(phase === '1') {
        // phase 1
-       results.phase = 1;
+       results.phase = buf[1].toString(16);
        // type 1
-       results.type = 1;
+       results.type = buf[2].toString(16);
        // amount
-       results.amount = decoded[6].toString();
-       // target address
-       results.address = decoded[7].toString()
-     } else if(phase === '02') {
+       // results.amount = decoded[6].toString();
+       // // target address
+       // results.address = decoded[7].toString()
+     } else if(phase === '2') {
        // phase 2
        results.phase = 2;
        // Bet Txn Id
        results.betTxId = decoded[5].toString();
        // Multi-sig Pub Key
        results.multisigPubKey = decoded[6].toString()
-     } else if(phase === '03') {
+     } else if(phase === '3') {
        // phase 3
        results.phase = 3;
        // Bet Txn Id
@@ -152,7 +196,7 @@ module.exports = class Chainbet {
        results.hostP2SHId = decoded[8].toString();
        // Host multsig pubkey
        results.hostMultisigPubKey = decoded[7].toString();
-     } else if(phase === '04') {
+     } else if(phase === '4') {
        // phase 4
        results.phase = 4;
        // Bet Txn Id
@@ -163,8 +207,8 @@ module.exports = class Chainbet {
        results.participantSig1 = decoded[7].toString();
        // Participant Signature 2
        results.participantSig2 = decoded[8].toString();
-     } else if(phase === '05') {
-     } else if(phase === '06') {
+     } else if(phase === '5') {
+     } else if(phase === '6') {
        // phase 6
        results.phase = 6;
        // Bet Txn Id
