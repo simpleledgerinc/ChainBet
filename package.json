@@ -1,6 +1,6 @@
 {
   "name": "chainbet",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Utility methods for reading/writing to the BCH blockchain per the ChainBet protocol",
   "main": "index.js",
   "scripts": {
