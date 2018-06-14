@@ -1,221 +1,226 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 module.exports = class Chainbet {
-   encodePhase1(type, amount, targetAddress) {
-     let hash160 = BITBOX.Crypto.hash160(targetAddress);
-     let arr = [...hash160];
-     let script = [
-       BITBOX.Script.opcodes.OP_RETURN,
-
-       // next 4 bytes will be random data
-       '0x04',
-
-       // 4 byte prefix
-       '0x00',
-       '0x42',
-       '0x45',
-       '0x54',
-       BITBOX.Script.opcodes.OP_PUSHDATA1,
-       `0x20`,
-
-       // version id
-       '0x01',
-
-       // phase
-       '0x01',
-
-       // bet type
-       type,
-
-       // amount
-       '0x00',
-       '0x00',
-       '0x00',
-       '0x31',
-       '0x32',
-       '0x33',
-       '0x34',
-       '0x35',
-       //
-     ];
-
-     arr.forEach((item, index) => {
-       script.push(item);
-     })
-
-     return BITBOX.Script.encode(script)
-   }
-
-  static amount2Hex(amount) {
-    var hex = amount.toString(16)
-    const len = hex.length
-    for (let i = 0; i < 16 - len; i++) {
-      hex = '0' + hex;
-    }
-    return hex
-  }
-
+  
+  // Phase 1: Bet Offer Announcement
   static encodePhase1(type, amount, targetAddress) {
+
+    // Set Phase 1 ChainBet payload length
+    var pushdatalength = 0x1f // 31 bytes with optional targetAddress
+    if(targetAddress == undefined) {
+      pushdatalength = 0x0b   // 11 bytes without targetAddress
+    }
+    
     let script = [
       BITBOX.Script.opcodes.OP_RETURN,
-      // 4 byte prefix
-      Buffer.from('00424554', 'hex'),
-      // protocol id
-      Buffer.from('01', 'hex'),
-      // version id
-      Buffer.from('01', 'hex'),
-      // phase
-      Buffer.from('01', 'hex'),
-      // bet type
-      Buffer.from(type, 'hex'),
-      // amount
-      Buffer.from(this.amount2Hex(amount)),  // check for padding
-      // target address
-      Buffer.from(targetAddress),
+      // pushdata, 4 bytes
+      0x04,
+      // 4 byte Terab prefix
+      0x00,
+      0x42,
+      0x45,
+      0x54,
+      BITBOX.Script.opcodes.OP_PUSHDATA1,
+      pushdatalength,
+      // 1 byte version id
+      0x01,
+      // 1 byte phase id
+      0x01,
+      // 1 byte bet type id
+      type,
+      // 8 byte amount
+      this.amount2Hex(amount)
+    ];
+
+    if(targetAddress != undefined) {
+      // optional 20 byte HASH160 public key hash
+      script.push(BITBOX.Crypto.hash160(targetAddress));
+    }
+
+    return BITBOX.Script.encode(script);
+  } 
+
+  // Phase 2: Bet Participant Acceptance
+  static encodePhase2(betTxId, multisigPubKey) {
+
+    // set Phase 2 ChainBet payload length to 67 bytes
+    var pushdatalength = 0x43
+
+    let script = [
+      BITBOX.Script.opcodes.OP_RETURN,
+      // pushdata, 4 bytes
+      0x04,
+      // 4 byte Terab prefix
+      0x00,
+      0x42,
+      0x45,
+      0x54,
+      BITBOX.Script.opcodes.OP_PUSHDATA1,
+      pushdatalength,
+      // 1 byte version id
+      0x01,
+      // 1 byte phase id
+      0x02,
+      // 32 byte betTxId hex
+      betTxId,
+      // 33 byte participant (Bob) multisig Pub Key hex 
+      multisigPubKey,
     ];
     return BITBOX.Script.encode(script)
   }
 
-   static encodePhase2(betTxId, multisigPubKey) {
-     let script = [
-       BITBOX.Script.opcodes.OP_RETURN,
-       // 4 byte prefix
-       Buffer.from('00424554', 'hex'),
-       // 1 byte protocol id
-       Buffer.from('01', 'hex'),
-       // 1 byte version id
-       Buffer.from('01', 'hex'),
-       // 1 byte phase
-       Buffer.from('02', 'hex'),
-       // bet tx id
-       Buffer.from(betTxId, 'hex'),
-       // multisig Pub Key
-       Buffer.from(multisigPubKey),  // check for padding
-     ];
-     return BITBOX.Script.encode(script)
-   }
+  // Phase 3: Bet Host Funding
+  static encodePhase3(betTxId, participantTxId, hostP2SHTxId, hostMultisigPubKey) {
+    
+    // set Phase 3 ChainBet payload length to 131 bytes
+    var pushdatalength = 0x83
 
-   static encodePhase3(betTxId, participantTxId, hostP2SHId, hostMultisigPubKey) {
-     let script = [
-       BITBOX.Script.opcodes.OP_RETURN,
-       // 4 byte prefix
-       Buffer.from('00424554', 'hex'),
-       // protocol id
-       Buffer.from('01', 'hex'),
-       // version id
-       Buffer.from('01', 'hex'),
-       // phase
-       Buffer.from('03', 'hex'),
-       // bet tx id
-       Buffer.from(betTxId, 'hex'),
-       // Participant tx id
-       Buffer.from(participantTxId, 'hex'),
-       // host P2SH id
-       Buffer.from(hostP2SHId, 'hex'),
-       // host Multisig Pub Key
-       Buffer.from(hostMultisigPubKey, 'hex'),   // check for padding
-     ];
-     return BITBOX.Script.encode(script)
-   }
+    let script = [
+      BITBOX.Script.opcodes.OP_RETURN,
+      // pushdata, 4 bytes
+      0x04,
+      // 4 byte prefix
+      0x00,
+      0x42,
+      0x45,
+      0x54,
+      BITBOX.Script.opcodes.OP_PUSHDATA1,
+      pushdatalength,
+      // 1 byte version id
+      0x01,
+      // 1 byte phase id
+      0x03,
+      // 32 byte bet tx id
+      betTxId,
+      // 32 byte participant tx id
+      participantTxId,
+      // 32 byte host P2SH id
+      hostP2SHTxId,
+      // 33 byte host (Alice) Multisig Pub Key
+      hostMultisigPubKey,
+    ];
+    return BITBOX.Script.encode(script)
+  }
 
-   static encodePhase4(betTxId, participantTxId, participantSig1, participantSig2) {
-     let script = [
-       BITBOX.Script.opcodes.OP_RETURN,
-       // 4 byte prefix
-       Buffer.from('00424554', 'hex'),
-       // protocol id
-       Buffer.from('01', 'hex'),
-       // version id
-       Buffer.from('01', 'hex'),
-       // phase
-       Buffer.from('04', 'hex'),
-       // bet tx id
-       Buffer.from(betTxId, 'hex'),
-       // Participant tx id
-       Buffer.from(participantTxId, 'hex'),
-       // Participant signature 1
-       Buffer.from(participantSig1, 'hex'),  // check for padding
-       // Participant signature 2
-       Buffer.from(participantSig2, 'hex'),  // check for padding
-     ];
-     return BITBOX.Script.encode(script)
-   }
+    // Phase 4: Bet Participant Funding
+    static encodePhase4(betTxId, participantTxId, participantSig1, participantSig2) {
 
-   static encodePhase5() {
-     // TODO
-   }
+      // set Phase 4 ChainBet payload length to 210 bytes
+      var pushdatalength = 0xd2
 
-   static encodePhase6(betTxId, secretValue) {
-     let script = [
-       BITBOX.Script.opcodes.OP_RETURN,
-       // 4 byte prefix
-       Buffer.from('00424554', 'hex'),
-       // protocol id
-       Buffer.from('01', 'hex'),
-       // version id
-       Buffer.from('01', 'hex'),
-       // phase
-       Buffer.from('06', 'hex'),
-       // bet tx id
-       Buffer.from(betTxId, 'hex'),
-       // Secret value
-       Buffer.from(secretValue, 'hex'),
-     ];
-     return BITBOX.Script.encode(script)
-   }
+      let script = [
+        BITBOX.Script.opcodes.OP_RETURN,
+        // pushdata, 4 bytes
+        0x04,
+        // 4 byte prefix
+        0x00,
+        0x42,
+        0x45,
+        0x54,
+        BITBOX.Script.opcodes.OP_PUSHDATA1,
+        pushdatalength,
+        // 1 byte version id
+        0x01,
+        // 1 byte phase id
+        0x04,
+        // 32 byte bet tx id
+        betTxId,
+        // 32 byte Participant tx id
+        participantTxId,
+        // 72 byte Participant signature 1
+        participantSig1,  // TODO: check for padding (71 vs 72 bytes)
+        // 72 byte Participant signature 2
+        participantSig2,  // TODO: check for padding (71 vs 72 bytes)
+      ];
+      return BITBOX.Script.encode(script)
+    }
 
-   decode(op_return) {
-     let data = op_return.split(" ");
-     let buf = Buffer.from(data[2], 'hex');
-     let results = {};
-     let phase = buf[1].toString(16);
-     if(phase === '1') {
-       // phase 1
-       results.phase = buf[1].toString(16);
-       // type 1
-       results.type = buf[2].toString(16);
-       // amount
-       // results.amount = decoded[6].toString();
-       // // target address
-       // results.address = decoded[7].toString()
-     } else if(phase === '2') {
-       // phase 2
-       results.phase = 2;
-       // Bet Txn Id
-       results.betTxId = decoded[5].toString();
-       // Multi-sig Pub Key
-       results.multisigPubKey = decoded[6].toString()
-     } else if(phase === '3') {
-       // phase 3
-       results.phase = 3;
-       // Bet Txn Id
-       results.betTxId = decoded[5].toString();
-       // Participant Txn Id
-       results.participantTxId = decoded[6].toString();
-       // Host P2SH txid
-       results.hostP2SHId = decoded[8].toString();
-       // Host multsig pubkey
-       results.hostMultisigPubKey = decoded[7].toString();
-     } else if(phase === '4') {
-       // phase 4
-       results.phase = 4;
-       // Bet Txn Id
-       results.betTxId = decoded[5].toString();
-       // Participant Txn Id
-       results.participantTxId = decoded[6].toString();
-       // Participant Signature 1
-       results.participantSig1 = decoded[7].toString();
-       // Participant Signature 2
-       results.participantSig2 = decoded[8].toString();
-     } else if(phase === '5') {
-     } else if(phase === '6') {
-       // phase 6
-       results.phase = 6;
-       // Bet Txn Id
-       results.betTxId = decoded[5].toString();
-       // Secret Value
-       results.secretValue = decoded[6].toString();
-     }
-     return results;
-   }
- }
+    // Phase 5: Funding Transaction
+    static encodePhase5() {
+      // TODO
+    }
+
+    // Phase 6: Bet Participant Resignation
+    static encodePhase6(betTxId, secretValue) {
+
+      // set Phase 6 ChainBet payload length to 66 bytes
+      var pushdatalength = 0x42
+    
+      let script = [
+        BITBOX.Script.opcodes.OP_RETURN,
+        // pushdata, 4 bytes
+        0x04,
+        // 4 byte prefix
+        0x00,
+        0x42,
+        0x45,
+        0x54,
+        BITBOX.Script.opcodes.OP_PUSHDATA1,
+        pushdatalength,
+        // 1 byte version id
+        0x01,
+        // 1 byte phase id
+        0x06,
+        // 32 byte bet txn id
+        betTxId,
+        // 32 byte Secret value
+        secretValue,
+      ];
+      return BITBOX.Script.encode(script)
+    }
+
+    // get big-endian hex from satoshis
+    static amount2Hex(amount) {
+      var hex = amount.toString(16)
+      const len = hex.length
+      for (let i = 0; i < 16 - len; i++) {
+        hex = '0' + hex;
+      }
+      return Buffer.from(hex, 'hex')
+    }
+
+    decode(op_return) {
+      let data = op_return.split("00424554");
+      let buf = Buffer.from(data[1], 'hex');
+      let phase = buf[3].toString();
+      let results = { phase: phase };
+      if(phase === 0x01) {
+        // type 1
+        results.type = buf[4].toString();
+        // amount
+        results.amount = buf[5].toString();
+        // // target address
+        results.address = buf[6].toString()
+      } else if(phase === 0x02) {
+        // Bet Txn Id
+        results.betTxId = buf[5].toString();
+        // Multi-sig Pub Key
+        results.multisigPubKey = buf[6].toString();
+      } else if(phase === 0x03) {
+        // Bet Txn Id
+        results.betTxId = decoded[5].toString();
+        // Participant Txn Id
+        results.participantTxId = decoded[6].toString();
+        // Host P2SH txid
+        results.hostP2SHId = decoded[8].toString();
+        // Host multsig pubkey
+        results.hostMultisigPubKey = decoded[7].toString();
+      } else if(phase === 0x04) {
+        // Bet Txn Id
+        results.betTxId = decoded[5].toString();
+        // Participant Txn Id
+        results.participantTxId = decoded[6].toString();
+        // Participant Signature 1
+        results.participantSig1 = decoded[7].toString();
+        // Participant Signature 2
+        results.participantSig2 = decoded[8].toString();
+      } else if(phase === 0x05) {
+      } else if(phase === 0x06) {
+        // Bet Txn Id
+        results.betTxId = decoded[5].toString();
+        // Secret Value
+        results.secretValue = decoded[6].toString();
+      }
+      return results;
+    }
+  }
