@@ -6,19 +6,52 @@ module.exports = class chainbet {
        BITBOX.Script.opcodes.OP_RETURN,
        // 4 byte prefix
        Buffer.from('00424554', 'hex'),
+       // next 4 bytes will be random data
+       '0x04',
+
+       // 4 byte prefix
+       '0x00',
+       '0x42',
+       '0x45',
+       '0x54',
+
+       // next 1 byte will be random data
+       '0x01',
        // protocol id
-       Buffer.from('01', 'hex'),
+       '0x01',
+
+       // next 1 byte will be random data
+       '0x01',
        // version id
-       Buffer.from('01', 'hex'),
+       '0x01',
+
+       // next 1 byte will be random data
+       '0x01',
        // phase
-       Buffer.from('01', 'hex'),
+       '0x01',
+
+       // next 1 byte will be random data
+       '0x01',
        // bet type
        Buffer.from(type, 'hex'),
-       // amount
-       Buffer.from(amount.toString()),
+
+       // next 8 bytes will be random data
+       '0x08',
+       // hardcoded amount
+       '0x00',
+       '0x00',
+       '0x00',
+       '0x00',
+       '0x31',
+       '0x32',
+       '0x33',
+       '0x34',
+       '0x35',
+
        // target address
        Buffer.from(BITBOX.Crypto.hash160(targetAddress)),
      ];
+    
      return BITBOX.Script.encode(script)
    }
 
