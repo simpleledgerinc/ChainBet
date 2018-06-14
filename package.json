@@ -1,6 +1,6 @@
 {
   "name": "chainbet",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Utility methods for reading/writing to the BCH blockchain per the ChainBet protocol",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "underscore": "^1.9.0",
-    "bitbox-cli": "1.0.1"
+    "bitbox-cli": "1.0.2"
   },
   "devDependencies": {
     "assert": "^1.4.1",
