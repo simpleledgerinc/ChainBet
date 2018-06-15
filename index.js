@@ -216,47 +216,49 @@ module.exports = class Chainbet {
       return buf
     }
 
-    decode(op_return) {
+    static decode(op_return) {
       let data = op_return.split("00424554");
-      let buf = Buffer.from(data[1], 'hex');
-      let phase = buf[3].toString();
-      let results = { phase: phase };
+      let buf = Buffer.from(data[1].trim(), 'hex');
+      let version = buf[0];
+      let phase = buf[1];
+      let results = { version: version, phase: phase };
       if(phase === 0x01) {
-        // type 1
-        results.type = buf[4].toString();
+        // type
+        results.type = buf[2];
         // amount
-        results.amount = buf[5].toString();
+        results.amount = parseInt(buf.slice(3,11).toString('hex'), 16);
         // // target address
-        results.address = buf[6].toString()
+        if (buf.length > 11)
+            results.address = buf.slice(11).toString('hex');
       } else if(phase === 0x02) {
         // Bet Txn Id
-        results.betTxId = buf[5].toString();
+        results.betTxId = buf.slice(2, 34).toString('hex');
         // Multi-sig Pub Key
-        results.multisigPubKey = buf[6].toString();
+        results.multisigPubKey = buf.slice(34).toString('hex');
       } else if(phase === 0x03) {
-        // Bet Txn Id
-        results.betTxId = decoded[5].toString();
-        // Participant Txn Id
-        results.participantTxId = decoded[6].toString();
-        // Host P2SH txid
-        results.hostP2SHId = decoded[8].toString();
-        // Host multsig pubkey
-        results.hostMultisigPubKey = decoded[7].toString();
+        // 32 byte Bet Txn Id
+        results.betTxId = buf.slice(2, 34).toString('hex');
+        // 32 byte Participant Txn Id
+        results.participantTxId = buf.slice(34, 66).toString('hex');
+        // 32 byte Host P2SH txid
+        results.hostP2SHId = buf.slice(66, 98).toString('hex');
+        // 33 byte Host (Alice) multsig pubkey
+        results.hostMultisigPubKey = buf.slice(98).toString('hex');
       } else if(phase === 0x04) {
-        // Bet Txn Id
-        results.betTxId = decoded[5].toString();
-        // Participant Txn Id
-        results.participantTxId = decoded[6].toString();
-        // Participant Signature 1
-        results.participantSig1 = decoded[7].toString();
-        // Participant Signature 2
-        results.participantSig2 = decoded[8].toString();
+        // 32 byte Bet Txn Id
+        results.betTxId = buf.slice(2, 34).toString('hex');
+        // 32 byte Participant Txn Id
+        results.participantTxId = buf.slice(34, 66).toString('hex');
+        // 72 byte Participant Signature 1
+        results.participantSig1 = buf.slice(66, 138).toString('hex');
+        // 72 byte Participant Signature 2
+        results.participantSig2 = buf.slice(138).toString('hex');
       } else if(phase === 0x05) {
       } else if(phase === 0x06) {
-        // Bet Txn Id
-        results.betTxId = decoded[5].toString();
-        // Secret Value
-        results.secretValue = decoded[6].toString();
+        // 32 byte Bet Txn Id
+        results.betTxId = buf.slice(2, 34).toString('hex');
+        // 32 byte Secret Value
+        results.secretValue = buf.slice(34, 66).toString('hex');
       }
       return results;
     }
