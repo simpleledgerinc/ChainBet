@@ -216,23 +216,25 @@ module.exports = class Chainbet {
       return buf
     }
 
-    decode(op_return) {
+    static decode(op_return) {
       let data = op_return.split("00424554");
-      let buf = Buffer.from(data[1], 'hex');
-      let phase = buf[3].toString();
-      let results = { phase: phase };
+      let buf = Buffer.from(data[1].trim(), 'hex');
+      let version = buf[0];
+      let phase = buf[1];
+      let results = { version: version, phase: phase };
       if(phase === 0x01) {
-        // type 1
-        results.type = buf[4].toString();
+        // type
+        results.type = buf[2];
         // amount
-        results.amount = buf[5].toString();
+        results.amount = parseInt(buf.slice(3,11).toString('hex'), 16);
         // // target address
-        results.address = buf[6].toString()
+        if (buf.length > 11)
+            results.address = buf.slice(11).toString('hex');
       } else if(phase === 0x02) {
         // Bet Txn Id
-        results.betTxId = buf[5].toString();
+        results.betTxId = buf.slice(2, 34).toString('hex');
         // Multi-sig Pub Key
-        results.multisigPubKey = buf[6].toString();
+        results.multisigPubKey = buf.slice(34).toString('hex');
       } else if(phase === 0x03) {
         // Bet Txn Id
         results.betTxId = decoded[5].toString();
