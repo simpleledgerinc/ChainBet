@@ -1,6 +1,6 @@
 {
   "name": "chainbet",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Utility methods for reading/writing to the BCH blockchain per the ChainBet protocol",
   "main": "index.js",
   "scripts": {
@@ -10,8 +10,9 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^0.18.0",
-    "underscore": "^1.9.0",
-    "bitbox-cli": "1.0.2"
+    "bitbox-cli": "1.0.2",
+    "bs58": "^4.0.1",
+    "underscore": "^1.9.0"
   },
   "devDependencies": {
     "assert": "^1.4.1",
