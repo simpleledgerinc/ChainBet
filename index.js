@@ -1,5 +1,8 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
+let base58 = require('bs58');
+let crypto = require('crypto');
+
 module.exports = class Chainbet {
   
   // Phase 1: Bet Offer Announcement
@@ -31,16 +34,30 @@ module.exports = class Chainbet {
     ];
     
     // add 8 byte amount
-    amount = this.amount2Hex(amount)
-    amount.forEach((item, index) => {
-      script.push(item);
-    })
+    amount = this.amount_2_hex(amount)
+    amount.forEach((item, index) => { script.push(item); })
 
-    // add optional 20 byte target address
+    // add optional 20 byte target address (encode in HASH160 hexidecimal form)
     if(targetAddress != undefined) {
-      // optional 20 byte HASH160 public key hash
-      let addr = BITBOX.Crypto.hash160(targetAddress);
-      addr.forEach((item, index) => { script.push(item); })
+      // NOTE: for now just add the address in ascii (in any form)
+      //let target_ascii_buf = Buffer(targetAddress);
+      //target_ascii_buf.forEach((item, index) => { script.push(item); })
+
+      // NOTE: HASH160 makes this more difficult becuase the network pre-fix gets chopped off...
+      if(BITBOX.Address.isLegacyAddress(targetAddress)) {
+        // do nothing
+      } else if(BITBOX.Address.isCashAddress(targetAddress)){
+        // convert to legacy address
+        targetAddress = BITBOX.Address.toLegacyAddress(targetAddress)
+      } else {
+        throw "Unsupported address format provided";
+      }
+      // convert from base58 to hex (giving us the HASH160)   
+      var hash160 = base58.decode(targetAddress);
+      let hash160_buf = Buffer(hash160, 'hex');
+      // chop off network byte and 4 checksum bytes
+      hash160_buf = hash160_buf.slice(1,21)
+      hash160_buf.forEach((item, index) => { script.push(item); })
     }
 
     let encoded = BITBOX.Script.encode(script);
@@ -205,8 +222,70 @@ module.exports = class Chainbet {
       return BITBOX.Script.encode(script)
     }
 
+    static decode(op_return, networkByte=0x00) {
+
+      // split the op_return payload and get relavant data
+      let data = op_return.split("04004245544c"); // pushdata (0x04) + Terab ID + pushdata (0x4c)
+      let buf = Buffer.from(data[1].trim(), 'hex');
+
+      // grab the common fields
+      let version = buf[1];
+      let phase = buf[2];
+      let results = { version: version, phase: phase };
+
+      // Phase 1 specific fields
+      if(phase === 0x01) {
+        // Bet Type
+        results.type = buf[3];
+        // Bet Amount
+        results.amount = parseInt(buf.slice(4,12).toString('hex'), 16);
+        // Target address (as hash160 without network or sha256)
+        if (buf.length > 12) // 11 + 1 length byte
+            var pkHash160Hex = buf.slice(12).toString('Hex');
+            results.address = this.hash160_2_cashAddr(pkHash160Hex, networkByte);
+
+      // Phase 2 specific fields
+      } else if(phase === 0x02) {
+        // Bet Txn Id
+        results.betTxId = buf.slice(3, 35).toString('hex');
+        // Multi-sig Pub Key
+        results.multisigPubKey = buf.slice(35).toString('hex');
+
+      // Phase 3  specific fields
+      } else if(phase === 0x03) {
+        // 32 byte Bet Txn Id
+        results.betTxId = buf.slice(3, 35).toString('hex');
+        // 32 byte Participant Txn Id
+        results.participantTxId = buf.slice(35, 67).toString('hex');
+        // 32 byte Host P2SH txid
+        results.hostP2SHId = buf.slice(67, 99).toString('hex');
+        // 33 byte Host (Alice) multsig pubkey
+        results.hostMultisigPubKey = buf.slice(99).toString('hex');
+
+      //Phase 4 specific fields
+      } else if(phase === 0x04) {
+        // 32 byte Bet Txn Id
+        results.betTxId = buf.slice(3, 35).toString('hex');
+        // 32 byte Participant Txn Id
+        results.participantTxId = buf.slice(35, 67).toString('hex');
+        // 72 byte Participant Signature 1
+        results.participantSig1 = buf.slice(67, 139).toString('hex');
+        // 72 byte Participant Signature 2
+        results.participantSig2 = buf.slice(139).toString('hex');
+
+      // Phase 6 specific fields
+      } else if(phase === 0x06) {
+        // 32 byte Bet Txn Id
+        results.betTxId = buf.slice(3, 35).toString('hex');
+        // 32 byte Secret Value
+        results.secretValue = buf.slice(35, 67).toString('hex');
+      }
+
+      return results;
+    }
+
     // get big-endian hex from satoshis
-    static amount2Hex(amount) {
+    static amount_2_hex(amount) {
       var hex = amount.toString(16)
       const len = hex.length
       for (let i = 0; i < 16 - len; i++) {
@@ -216,50 +295,22 @@ module.exports = class Chainbet {
       return buf
     }
 
-    static decode(op_return) {
-      let data = op_return.split("00424554");
-      let buf = Buffer.from(data[1].trim(), 'hex');
-      let version = buf[0];
-      let phase = buf[1];
-      let results = { version: version, phase: phase };
-      if(phase === 0x01) {
-        // type
-        results.type = buf[2];
-        // amount
-        results.amount = parseInt(buf.slice(3,11).toString('hex'), 16);
-        // // target address
-        if (buf.length > 11)
-            results.address = buf.slice(11).toString('hex');
-      } else if(phase === 0x02) {
-        // Bet Txn Id
-        results.betTxId = buf.slice(2, 34).toString('hex');
-        // Multi-sig Pub Key
-        results.multisigPubKey = buf.slice(34).toString('hex');
-      } else if(phase === 0x03) {
-        // 32 byte Bet Txn Id
-        results.betTxId = buf.slice(2, 34).toString('hex');
-        // 32 byte Participant Txn Id
-        results.participantTxId = buf.slice(34, 66).toString('hex');
-        // 32 byte Host P2SH txid
-        results.hostP2SHId = buf.slice(66, 98).toString('hex');
-        // 33 byte Host (Alice) multsig pubkey
-        results.hostMultisigPubKey = buf.slice(98).toString('hex');
-      } else if(phase === 0x04) {
-        // 32 byte Bet Txn Id
-        results.betTxId = buf.slice(2, 34).toString('hex');
-        // 32 byte Participant Txn Id
-        results.participantTxId = buf.slice(34, 66).toString('hex');
-        // 72 byte Participant Signature 1
-        results.participantSig1 = buf.slice(66, 138).toString('hex');
-        // 72 byte Participant Signature 2
-        results.participantSig2 = buf.slice(138).toString('hex');
-      } else if(phase === 0x05) {
-      } else if(phase === 0x06) {
-        // 32 byte Bet Txn Id
-        results.betTxId = buf.slice(2, 34).toString('hex');
-        // 32 byte Secret Value
-        results.secretValue = buf.slice(34, 66).toString('hex');
-      }
-      return results;
+    static hash160_2_cashAddr(pkHash160Hex, networkByte) {
+      // handle the network byte prefix
+      let networkHex = Buffer([networkByte]).toString('hex');
+
+      // calculate checksum and 
+      // add first 4 bytes from double sha256
+      let hash1 = crypto.createHash('sha256');
+      let hash2 = crypto.createHash('sha256');
+      hash1.update(Buffer(networkHex + pkHash160Hex, 'hex'));
+      hash2.update(hash1.digest());
+      let checksum = hash2.digest().slice(0,4).toString('hex');
+      let addressBuf = Buffer(networkHex + pkHash160Hex + checksum, 'hex')
+      let hex = addressBuf.toString('hex')
+      let addressBase58 = base58.encode(addressBuf)
+      
+      return BITBOX.Address.toCashAddress(addressBase58);
     }
+
   }
