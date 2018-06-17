@@ -3,7 +3,7 @@ let BITBOX = new BITBOXCli();
 let base58 = require('bs58');
 let crypto = require('crypto');
 
-module.exports = class Chainbet {
+module.exports = class chainbet {
   
   // Phase 1: Bet Offer Announcement
   static encodePhase1(type, amount, targetAddress) {
@@ -66,10 +66,10 @@ module.exports = class Chainbet {
   } 
 
   // Phase 2: Bet Participant Acceptance
-  static encodePhase2(betTxId, multisigPubKey) {
+  static encodePhase2(betTxId, multisigPubKey, secretCommitment) {
 
-    // set Phase 2 ChainBet payload length to 67 bytes
-    var pushdatalength = 0x43
+    // set Phase 2 ChainBet payload length to 99 bytes
+    var pushdatalength = 0x63
 
     let script = [
       BITBOX.Script.opcodes.OP_RETURN,
@@ -95,6 +95,10 @@ module.exports = class Chainbet {
     // 33 byte participant (Bob) multisig Pub Key hex 
     multisigPubKey = Buffer(multisigPubKey, 'hex')
     multisigPubKey.forEach((item, index) => { script.push(item); })
+
+    // 32 byte participant (Bob) secret commitment
+    secretCommitment = Buffer(secretCommitment, 'hex')
+    secretCommitment.forEach((item, index) => { script.push(item); })
 
     return BITBOX.Script.encode(script)
   }
@@ -247,38 +251,40 @@ module.exports = class Chainbet {
       // Phase 2 specific fields
       } else if(phase === 0x02) {
         // Bet Txn Id
-        results.betTxId = buf.slice(3, 35).toString('hex');
-        // Multi-sig Pub Key
-        results.multisigPubKey = buf.slice(35).toString('hex');
+        results.betTxId = buf.slice(3, 35);
+        // 33 byte Multi-sig Pub Key
+        results.multisigPubKey = buf.slice(35,68);
+        // 32 byte bob commitment
+        results.secretCommitment = buf.slice(68);
 
       // Phase 3  specific fields
       } else if(phase === 0x03) {
         // 32 byte Bet Txn Id
-        results.betTxId = buf.slice(3, 35).toString('hex');
+        results.betTxId = buf.slice(3, 35);
         // 32 byte Participant Txn Id
-        results.participantTxId = buf.slice(35, 67).toString('hex');
+        results.participantOpReturnTxId = buf.slice(35, 67);
         // 32 byte Host P2SH txid
-        results.hostP2SHId = buf.slice(67, 99).toString('hex');
+        results.hostP2SHTxId = buf.slice(67, 99);
         // 33 byte Host (Alice) multsig pubkey
-        results.hostMultisigPubKey = buf.slice(99).toString('hex');
+        results.hostMultisigPubKey = buf.slice(99);
 
       //Phase 4 specific fields
       } else if(phase === 0x04) {
         // 32 byte Bet Txn Id
-        results.betTxId = buf.slice(3, 35).toString('hex');
+        results.betTxId = buf.slice(3, 35);
         // 32 byte Participant Txn Id
-        results.participantTxId = buf.slice(35, 67).toString('hex');
+        results.participantP2SHTxId = buf.slice(35, 67);
         // 72 byte Participant Signature 1
-        results.participantSig1 = buf.slice(67, 139).toString('hex');
+        results.participantSig1 = buf.slice(67, 139);
         // 72 byte Participant Signature 2
-        results.participantSig2 = buf.slice(139).toString('hex');
+        results.participantSig2 = buf.slice(139);
 
       // Phase 6 specific fields
       } else if(phase === 0x06) {
         // 32 byte Bet Txn Id
-        results.betTxId = buf.slice(3, 35).toString('hex');
+        results.betTxId = buf.slice(3, 35)
         // 32 byte Secret Value
-        results.secretValue = buf.slice(35, 67).toString('hex');
+        results.secretValue = buf.slice(35, 67);
       }
 
       return results;
