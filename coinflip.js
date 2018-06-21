@@ -1,6 +1,6 @@
 var coinflip = require('commander');
 var inquirer = require('inquirer');
-let chainbet = require('chainbet');
+let chainbet = require('./chainbet.js');
 
 coinflip
   .version('0.0.1')
@@ -47,10 +47,31 @@ inquirer.prompt(function() {
 
 // 5) depending on which role user choses launch into that mode...
 .then(() => {
-    if(coinflip.role == 1){
-        chainbet.hostCoinflip(coinflip.wif, coinflip.pubkey, coinflip.address);
-    } else {
-        chainbet.joinCoinflip(coinflip.wif, coinflip.pubkey, coinflip.address);
+
+    var bet;
+
+    if(coinflip.role == 1){ // Host Mode
+        
+        // create object that will manage the lifecycle of the bet
+        bet = new chainbet.CoinFlipHost(coinflip.wif, coinflip.pubkey, coinflip.address);
+
+        // create while loop to keep program alive, and allow user interaction when needed
+        while(bet.phase != 7){
+            chainbet.CoinFlipHost.checkForUserInput(bet);
+            await chainbet.Utils.sleep(500);
+        }
+
+    } else { // Client Mode
+
+        // create object that will manage the lifecycle of the bet
+        bet = new chainbet.CoinFlipClient(coinflip.wif, coinflip.pubkey, coinflip.address);
+
+        // create while loop to keep program alive, and allow user interaction when needed
+        while(bet.phase != 7){
+            chainbet.CoinFlipClient.checkForUserInput(bet);
+            await chainbet.Utils.sleep(500);
+        }
     }
+
     console.log("coinflip program exited."); 
 });
