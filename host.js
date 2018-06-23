@@ -1,19 +1,20 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 
-let crypto = require('crypto');
 let base58 = require('bs58');
 
+let Utils = require('./utils')
 
 module.exports = class Host {
+	constructor(){}
 
 	// Phase 1: Bet Offer Announcement
-	static encodePhase1Message(type, amount, targetAddress) {
+	static encodePhase1Message(type, amount, hostCommitment, targetAddress) {
 
 		// Set Phase 1 ChainBet payload length
-		var pushdatalength = 0x1f // 31 bytes with optional targetAddress
+		var pushdatalength = 0x33 // 51 bytes with optional targetAddress
 		if(targetAddress == undefined) {
-			pushdatalength = 0x0b   // 11 bytes without targetAddress
+			pushdatalength = 0x1f   // 31 bytes without targetAddress
 		}
 		
 		let script = [
@@ -36,8 +37,11 @@ module.exports = class Host {
 		];
 		
 		// add 8 byte amount
-		amount = Util.amount_2_hex(amount)
+		amount = Utils.amount_2_hex(amount)
 		amount.forEach((item, index) => { script.push(item); })
+
+		// add 20 byte host commitment
+		hostCommitment.forEach((item, index) => { script.push(item); })
 
 		// add optional 20 byte target address (encode in HASH160 hexidecimal form)
 		if(targetAddress != undefined) {

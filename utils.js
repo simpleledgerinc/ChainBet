@@ -4,13 +4,41 @@ let BITBOX = new BITBOXCli();
 let crypto = require('crypto');
 let base58 = require('bs58');
 
-module.exports = class Util {
+module.exports = class Utils {
+
+	static padSig(sig){
+		if(sig.length == 71){
+			var sigHex = sig.toString('hex');
+			sigHex = '00' + sigHex;
+			sig = Buffer(sigHex, 'hex');
+		}
+
+		return sig;
+	}
+
+	static unpadSig(sig){
+		if(sig[0] == 0){
+			return sig.slice(1,72);
+		}
+
+		return sig;
+	}
 
 	// get big-endian hex from satoshis
 	static amount_2_hex(amount) {
 		var hex = amount.toString(16)
 		const len = hex.length
 		for (let i = 0; i < 16 - len; i++) {
+		hex = '0' + hex;
+		}
+		let buf = Buffer.from(hex, 'hex')
+		return buf
+	}
+
+	static secret_2_buf(secret_number){
+		var hex = secret_number.toString(16)
+		const len = hex.length
+		for (let i = 0; i < 64 - len; i++) {
 		hex = '0' + hex;
 		}
 		let buf = Buffer.from(hex, 'hex')

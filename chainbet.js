@@ -5,5 +5,6 @@ module.exports = {
 	Host: require('./host.js'),
 	Client: require('./client.js'),
 	Utils: require('./utils.js'),
-	MessageFeed: require('./messagefeed.js')
+	MessageFeed: require('./messagefeed.js'),
+	CoinFlip: require('./coinflip.js')
 }

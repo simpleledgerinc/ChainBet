@@ -1,7 +1,7 @@
 let fixtures = require('./fixtures/chainbet.json')
 //let chai = require('chai');
 let assert = require('assert');
-let chainbet = require('../index');
+let chainbet = require('../chainbet');
 
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
@@ -18,7 +18,7 @@ describe('#chainbet', () => {
 		fixtures.chainbet.encodePhase1.forEach((fixture) => {
 			it(`should encodePhase1`, () => {
 				// Phase 1 with optional target address
-				let script_buf = chainbet.encodePhase1(0x01, 1000, 'bitcoincash:qzs02v05l7qs5s24srqju498qu55dwuj0cx5ehjm2c');
+				let script_buf = chainbet.Host.encodePhase1Message(0x01, 1000, MISSING_HOST_COMMITMENT, 'bitcoincash:qzs02v05l7qs5s24srqju498qu55dwuj0cx5ehjm2c');
 				
 				script_phase1 = script_buf.toString('hex');
 
@@ -27,7 +27,7 @@ describe('#chainbet', () => {
 										'8a0f531f4ff810a415580c12e54a7072946bb927e');
 
 				// Phase 1 with no target address
-				let script_buf_noAddr = chainbet.encodePhase1(0x01, 1000);
+				let script_buf_noAddr = chainbet.Host.encodePhase1Message(0x01, 1000, MISSING_HOST_COMMITMENT);
 
 				script_phase1_noAddr = script_buf.toString('hex');
 
@@ -42,16 +42,16 @@ describe('#chainbet', () => {
 			it(`should encodePhase2`, () => {
 				let betTxId = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b'
 				let multiSigPubKey = '000000000000000000000000000000000000000000000000000000000000000000';
-				let secretCommitment = '1111111111111111111111111111111111111111111111111111111111111111';
+				let secretCommitment = '1111111111111111111111111111111111111111';
 				
-				let script_buf = chainbet.encodePhase2(betTxId, multiSigPubKey, secretCommitment)
+				let script_buf = chainbet.Client.encodePhase2(betTxId, multiSigPubKey, secretCommitment)
 
 				script_phase2 = script_buf.toString('hex');
 
 				let asm_phase2 = BITBOX.Script.toASM(script_buf)
 				assert.equal(asm_phase2, 'OP_RETURN 00424554 01024a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b' + 
 											'000000000000000000000000000000000000000000000000000000000000000000' + 
-											'1111111111111111111111111111111111111111111111111111111111111111');
+											'1111111111111111111111111111111111111111');
 			});
 		});
 	});
@@ -63,7 +63,7 @@ describe('#chainbet', () => {
 				let participantTxId = '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098'
 				let hostP2SHTxId = '999e1c837c76a1b7fbb7e57baf87b309960f5ffefbf2a9b95dd890602272f644'
 				let hostmultiSigPubKey = '111111111111111111111111111111111111111111111111111111111111111111'
-				let script_buf = chainbet.encodePhase3(betTxId, participantTxId, hostP2SHTxId, hostmultiSigPubKey)
+				let script_buf = chainbet.Host.encodePhase3(betTxId, participantTxId, hostP2SHTxId, hostmultiSigPubKey)
 
 				script_phase3 = script_buf.toString('hex');
 
@@ -87,7 +87,7 @@ describe('#chainbet', () => {
 															'e0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce'
 				let participantSig2 = '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220a' +
 															'e0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce'
-				let script_buf = chainbet.encodePhase4(betTxId, participantTxId, participantSig1, participantSig2)
+				let script_buf = chainbet.Client.encodePhase4(betTxId, participantTxId, participantSig1, participantSig2)
 
 				script_phase4 = script_buf.toString('hex');
 
@@ -119,7 +119,7 @@ describe('#chainbet', () => {
 			it(`should encodePhase6`, () => {
 				let betTxId = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b'
 				let secrVal = '0000000000000000000000000000000000000000000000000000000000000000'
-				let script_buf = chainbet.encodePhase6(betTxId, secrVal)
+				let script_buf = chainbet.Client.encodePhase6(betTxId, secrVal)
 
 				script_phase6 = script_buf.toString('hex');
 
@@ -135,7 +135,7 @@ describe('#chainbet', () => {
 		fixtures.chainbet.decode.forEach((fixture) => {
 			it(`should decodePhase1`, () => {
 				// Decode Phase 1 (with optional address)
-				let actual_phase1 = chainbet.decode(script_phase1);
+				let actual_phase1 = chainbet.Core.decodeOP_RETURN(script_phase1);
 				let expected_phase1 = { 
 					version: 0x01, 
 					phase: 0x01, 
@@ -151,7 +151,7 @@ describe('#chainbet', () => {
 				assert.equal(actual_phase1.address, expected_phase1.address);
 
 				// Decode Phase 1 (without optional address)
-				let actual_phase1_noAddr = chainbet.decode(script_phase1_noAddr);
+				let actual_phase1_noAddr = chainbet.Core.decodeOP_RETURN(script_phase1_noAddr);
 				let expected_phase1_noAddr = { 
 					version: 0x01, 
 					phase: 0x01, 
@@ -171,17 +171,17 @@ describe('#chainbet', () => {
 			it(`should decodePhase2`, () => {
 
 				// Decode Phase 2
-				var actual_phase2 = chainbet.decode(script_phase2);
+				var actual_phase2 = chainbet.Core.decodeOP_RETURN(script_phase2);
 				var expected_phase2 = { 
 					version: 0x01, 
 					phase: 0x02, 
 					betTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b', 
 					multisigPubKey:  '000000000000000000000000000000000000000000000000000000000000000000',
-					secretCommitment: '1111111111111111111111111111111111111111111111111111111111111111'
+					secretCommitment: '1111111111111111111111111111111111111111'
 				};
 				assert.equal(actual_phase2.betTxId.length, 32);
 				assert.equal(actual_phase2.multisigPubKey.length, 33);      
-				assert.equal(actual_phase2.secretCommitment.length, 32);
+				assert.equal(actual_phase2.secretCommitment.length, 20);
 				assert.equal(actual_phase2.version, expected_phase2.version);
 				assert.equal(actual_phase2.phase, expected_phase2.phase);
 				assert.equal(actual_phase2.betTxId.toString('hex'), expected_phase2.betTxId);
@@ -195,7 +195,7 @@ describe('#chainbet', () => {
 		fixtures.chainbet.decode.forEach((fixture) => {
 			it(`should decodePhase3`, () => {
 				// Decode Phase 3
-				let actual_phase3 = chainbet.decode(script_phase3);
+				let actual_phase3 = chainbet.Core.decodeOP_RETURN(script_phase3);
 				let expected_phase3 = { 
 					version: 0x01, 
 					phase: 0x03, 
@@ -224,7 +224,7 @@ describe('#chainbet', () => {
 		fixtures.chainbet.decode.forEach((fixture) => {
 			it(`should decodePhase4`, () => {
 				// Decode Phase 4
-				let actual_phase4 = chainbet.decode(script_phase4);
+				let actual_phase4 = chainbet.Core.decodeOP_RETURN(script_phase4);
 				let expected_phase4 = { 
 					version: 0x01, 
 					phase: 0x04, 
@@ -252,7 +252,7 @@ describe('#chainbet', () => {
 		fixtures.chainbet.decode.forEach((fixture) => {
 			it(`should decodePhase6`, () => {
 				// Decode Phase 6
-				let actual_phase6 = chainbet.decode(script_phase6);
+				let actual_phase6 = chainbet.Core.decodeOP_RETURN(script_phase6);
 				let expected_phase6 = { 
 					version: 0x01, 
 					phase: 0x06, 
@@ -273,7 +273,7 @@ describe('#chainbet', () => {
 		fixtures.chainbet.decode.forEach((fixture) => {
 			it(`should convert number amount to 8 byte hex big-endian`, () => {
 				let amount = 10000000000 // 100 BCH
-				let hex = chainbet.amount_2_hex(amount)
+				let hex = chainbet.Utils.amount_2_hex(amount)
 				assert.equal(hex.toString('hex'), '00000002540be400');
 			});
 		});
@@ -285,7 +285,7 @@ describe('#chainbet', () => {
 				let expected_address = 'bitcoincash:qzs02v05l7qs5s24srqju498qu55dwuj0cx5ehjm2c';
 				let actual_pkHash160 = 'a0f531f4ff810a415580c12e54a7072946bb927e';
 				let networkByte = 0x00;
-				let actual_address = chainbet.hash160_2_cashAddr(actual_pkHash160, networkByte);
+				let actual_address = chainbet.Utils.hash160_2_cashAddr(actual_pkHash160, networkByte);
 				assert.equal(actual_address, expected_address);
 			});
 		});

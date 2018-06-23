@@ -1,16 +1,13 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 
-let crypto = require('crypto');
-let base58 = require('bs58');
-
 module.exports = class Client {
 
 	// Phase 2: Bet Participant Acceptance
-	static encodePhase2(betTxId, multisigPubKey, secretCommitment) {
+	static encodePhase2Message(betTxId, multisigPubKey, secretCommitment) {
 
 		// set Phase 2 ChainBet payload length to 99 bytes
-		var pushdatalength = 0x63
+		var pushdatalength = 0x57
 
 		let script = [
 		BITBOX.Script.opcodes.OP_RETURN,
@@ -26,7 +23,7 @@ module.exports = class Client {
 		// 1 byte version id
 		0x01,
 		// 1 byte phase id
-		0x02,
+		0x02
 		];
 
 		// 32 byte betTxId hex

@@ -1,8 +1,7 @@
-## Usage
-
-
+## Dev Usage
 
 ```js
+
 let chainbet = require('chainbet');
 
 // 1) Create Script Buffer object for any phase
@@ -16,4 +15,13 @@ chainbet.decode(scriptHex);
 //   type: 1,
 //   amount: 1000,
 //   address: 'bitcoincash:qzs02v05l7qs5s24srqju498qu55dwuj0cx5ehjm2c' }
+
 ```
+
+## Bitcoin Cash Coin Flip Demo Usage
+
+1) install node.js
+2) git clone repository
+3) `cd chainbet`
+4) update `/tmp/wallet.json` file with your compressed pubkey, address, and wif.
+5) run `node coinflip` and follow the instructions provided to you.
