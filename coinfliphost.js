@@ -71,7 +71,7 @@ module.exports = class CoinFlipHost extends Host {
                 
 
                 // NOTE: to simplify we will automatically accept the first bet host we see
-                console.log("Someone has accepted your bet!! (txnId: " + betId + ")");
+                console.log("Someone has accepted your bet!! (txnId: " + bet.op_return_txnId + ")");
                 //console.log("Client txn Id: " + this.betState.clientTxId);
 
                 this.betState.phase = 3;
@@ -124,7 +124,8 @@ module.exports = class CoinFlipHost extends Host {
 
                 // NOTE: to simplify we will automatically accept the first bet host we see
                 //       We also assume the host's escrow is funded.
-                console.log("The client has funded the bet!! (txnId: " + betId + ")");
+                console.log("The client has funded the bet!! (txnId: " + bet.op_return_txnId + ")");
+                console.log("Client escrow txn: " + this.betState.clientP2SHTxId);
 
                 this.betState.phase = 5;
             }
