@@ -5,6 +5,25 @@ let Utils = require('./utils')
 
 module.exports = class Core {
 	
+	static async sendRawTransaction(hex, retries=10) {
+		var result = undefined;
+
+		var i = 0;
+
+		while(result == undefined){
+			result = await BITBOX.RawTransactions.sendRawTransaction(hex);
+			i++;
+			if (i > retries)
+				throw new Error("BITBOX.RawTransactions.sendRawTransaction endpoint experienced a problem.")
+			await Utils.sleep(1000);
+		}
+
+		if(result.length != 64)
+			console.log("An error occured while sending the transaction:\n" + result);
+
+		return result;
+	}
+
 	static async getAddressDetailsWithRetry(address, retries=10){
 		var result = undefined;
 		var count = 0;
@@ -13,8 +32,8 @@ module.exports = class Core {
 			result = await BITBOX.Address.details(address);
 			count++;
 			if(count > retries)
-				throw new Error("BITBOX.Address.details endpoint is experiencing issues");
-			await Utils.sleep(250);
+				throw new Error("BITBOX.Address.details endpoint experienced a problem");
+			await Utils.sleep(1000);
 		}
 
 		return result;
@@ -28,8 +47,8 @@ module.exports = class Core {
 			result = await Core.getUtxo(address)
 			count++;
 			if(count > retries)
-				throw new Error("BITBOX.Address.utxo endpoint is experiencing issues");
-			await Utils.sleep(250);
+				throw new Error("BITBOX.Address.utxo endpoint experienced a problem");
+			await Utils.sleep(1000);
 		}
 
 		return result;
@@ -146,167 +165,125 @@ module.exports = class Core {
 		// THIS MAY BE BUGGY TO HAVE THIS HERE
 		//wallet.utxo = await this.getUtxo(wallet.address);
 		
-		return new Promise((resolve, reject) => {
-			let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
-			let hashType = transactionBuilder.hashTypes.SIGHASH_ALL;
-	
-			let totalUtxo = 0;
-			wallet.utxo.forEach((item, index) => { 
-				transactionBuilder.addInput(item.txid, item.vout); 
-				totalUtxo += item.satoshis;
-			});
-	
-			let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: wallet.utxo.length }, { P2SH: 0 }) + op_return_buf.length + 75;
-			let satoshisAfterFee = totalUtxo - byteCount
-	
-			transactionBuilder.addOutput(op_return_buf, 0);        				        // OP_RETURN Message 
-			transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee); // Change 
-			//console.log("txn fee: " + byteCount);
-			//console.log("satoshis left: " + satoshisAfterFee);
-			let key = BITBOX.ECPair.fromWIF(wallet.wif);
+		//return new Promise((resolve, reject) => {
+		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+		let hashType = transactionBuilder.hashTypes.SIGHASH_ALL;
 
-			let redeemScript;
-			wallet.utxo.forEach((item, index) => {
-				transactionBuilder.sign(index, key, redeemScript, hashType, item.satoshis);
-			});
-
-			let hex = transactionBuilder.build().toHex();
-
-			//console.log("Create op_return message hex:", hex);
-
-			BITBOX.RawTransactions.sendRawTransaction(hex).then((result) => { 
-				//console.log("OP_RETURN RESULT: " + result)
-				//console.log('Create op_return txid:', result);
-				if (result.length < 60) { // Very rough txid size check for failure
-					console.log(result);
-					reject("txid too small");
-				}
-				else {
-					resolve(result);
-				}
-			}, (err) => { 
-				console.log("ERROR: " + err);
-				reject(err);
-			});
+		let totalUtxo = 0;
+		wallet.utxo.forEach((item, index) => { 
+			transactionBuilder.addInput(item.txid, item.vout); 
+			totalUtxo += item.satoshis;
 		});
+
+		let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: wallet.utxo.length }, { P2SH: 0 }) + op_return_buf.length + 75;
+		let satoshisAfterFee = totalUtxo - byteCount
+
+		transactionBuilder.addOutput(op_return_buf, 0);        				        // OP_RETURN Message 
+		transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee); // Change 
+		//console.log("txn fee: " + byteCount);
+		//console.log("satoshis left: " + satoshisAfterFee);
+		let key = BITBOX.ECPair.fromWIF(wallet.wif);
+
+		let redeemScript;
+		wallet.utxo.forEach((item, index) => {
+			transactionBuilder.sign(index, key, redeemScript, hashType, item.satoshis);
+		});
+
+		let hex = transactionBuilder.build().toHex();
+
+		//console.log("Create op_return message hex:", hex);
+
+		let txId = await Core.sendRawTransaction(hex);
+		return txId;
 	}
 
 	static async createEscrow(wallet, script, betAmount){
 		
-		return new Promise( (resolve, reject) => {
-			let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
-			let hashType = transactionBuilder.hashTypes.SIGHASH_ALL | transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY;
-	
-			let totalUtxo = 0;
-			wallet.utxo.forEach((item, index) => { 
-				transactionBuilder.addInput(item.txid, item.vout); 
-				totalUtxo += item.satoshis;
-			});
-	
-			let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: wallet.utxo.length }, { P2SH: 1 }) + 50;
-			let satoshisAfterFee = totalUtxo - byteCount - betAmount
-	
-			let p2sh_hash160 = BITBOX.Crypto.hash160(script);
-			let p2sh_hash160_hex = p2sh_hash160.toString('hex');
-			let scriptPubKey = BITBOX.Script.scriptHash.output.encode(p2sh_hash160);
+		//return new Promise( (resolve, reject) => {
+		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+		let hashType = transactionBuilder.hashTypes.SIGHASH_ALL | transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY;
 
-			let escrowAddress = BITBOX.Address.toLegacyAddress(BITBOX.Address.fromOutputScript(scriptPubKey));
-			let changeAddress = BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress);
-			// console.log("escrow address: " + address);
-			// console.log("change satoshi: " + satoshisAfterFee);
-			// console.log("change bet amount: " + betAmount);
-
-			transactionBuilder.addOutput(escrowAddress, betAmount);
-			transactionBuilder.addOutput(changeAddress, satoshisAfterFee);
-			//console.log("Added escrow outputs...");
-
-			let key = BITBOX.ECPair.fromWIF(wallet.wif);
-	
-			let redeemScript;
-			wallet.utxo.forEach((item, index) => {
-				transactionBuilder.sign(index, key, redeemScript, hashType, item.satoshis);
-			});
-			//console.log("signed escrow inputs...");
-
-			let hex = transactionBuilder.build().toHex();
-			//console.log("built escrow...");
-
-			//console.log("Escrow hex:", hex);
-			BITBOX.RawTransactions.sendRawTransaction(hex).then((result) => { 
-				//console.log('Escrow txid:', result);
-				if (result == undefined)
-				{
-					throw new Error("Error sending raw transaction");
-				}
-				else if (result.length < 60){ // Very rough txid size check for failure
-					console.log(result);
-					reject("txid too small");
-				}
-				else {
-					resolve(result);
-				}
-			}, (err) => { 
-				console.log(err);
-				reject(err);
-			});
+		let totalUtxo = 0;
+		wallet.utxo.forEach((item, index) => { 
+			transactionBuilder.addInput(item.txid, item.vout); 
+			totalUtxo += item.satoshis;
 		});
+
+		let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: wallet.utxo.length }, { P2SH: 1 }) + 50;
+		let satoshisAfterFee = totalUtxo - byteCount - betAmount
+
+		let p2sh_hash160 = BITBOX.Crypto.hash160(script);
+		let p2sh_hash160_hex = p2sh_hash160.toString('hex');
+		let scriptPubKey = BITBOX.Script.scriptHash.output.encode(p2sh_hash160);
+
+		let escrowAddress = BITBOX.Address.toLegacyAddress(BITBOX.Address.fromOutputScript(scriptPubKey));
+		let changeAddress = BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress);
+		// console.log("escrow address: " + address);
+		// console.log("change satoshi: " + satoshisAfterFee);
+		// console.log("change bet amount: " + betAmount);
+
+		transactionBuilder.addOutput(escrowAddress, betAmount);
+		transactionBuilder.addOutput(changeAddress, satoshisAfterFee);
+		//console.log("Added escrow outputs...");
+
+		let key = BITBOX.ECPair.fromWIF(wallet.wif);
+
+		let redeemScript;
+		wallet.utxo.forEach((item, index) => {
+			transactionBuilder.sign(index, key, redeemScript, hashType, item.satoshis);
+		});
+		//console.log("signed escrow inputs...");
+
+		let hex = transactionBuilder.build().toHex();
+		//console.log("built escrow...");
+
+		let txId = await Core.sendRawTransaction(hex);
+		return txId;
     }
     
     static async redeemEscrowToEscape(wallet, redeemScript, txid, betAmount){
         
-        return new Promise( (resolve, reject) => {
+        //return new Promise( (resolve, reject) => {
     
-            let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
-            let participantKey = BITBOX.ECPair.fromWIF(client.wif)
-            let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
-    
-            let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
-            let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
-            let satoshisAfterFee = betAmount - byteCount - 350;
-            // NOTE: must set the Sequence number below
-            transactionBuilder.addInput(txid, 0, bip68.encode({ blocks: 1 })); // No need to worry about sweeping the P2SH address.      
-            transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
-    
-            let tx = transactionBuilder.transaction.buildIncomplete();
-    
-            let signatureHash = tx.hashForWitnessV0(0, redeemScript, betAmount, hashType);
-            let hostSignature = hostKey.sign(signatureHash).toScriptSignature(hashType);
-            let participantSignature = participantKey.sign(signatureHash).toScriptSignature(hashType);
-    
-            let redeemScriptSig = []; // start by pushing with true for makeBet mode
-    
-            // host signature
-            redeemScriptSig.push(hostSignature.length);
-            hostSignature.forEach((item, index) => { redeemScriptSig.push(item); });
-    
-            // push mode onto stack for MakeBet mode
-            redeemScriptSig.push(0x00); //use 0 for escape mode
-    
-            if (redeemScript.length > 75) redeemScriptSig.push(0x4c);
-            redeemScriptSig.push(redeemScript.length);
-            redeemScript.forEach((item, index) => { redeemScriptSig.push(item); });
-            
-            redeemScriptSig = Buffer(redeemScriptSig);
-            
-            let redeemScriptSigHex = redeemScriptSig.toString('hex');
-            let redeemScriptHex = redeemScript.toString('hex');
-            
-            tx.setInputScript(0, redeemScriptSig);
-            let hex = tx.toHex();
-            
-            console.log("Redeem escrow hex:", hex);
-            BITBOX.RawTransactions.sendRawTransaction(hex).then((result) => { 
-                console.log('Redeem escrow txid:', result);
-                if (result.length < 60) // Very rough txid size check for failure
-                    reject("txid too small");
-                else {
-                    resolve(result);
-                }
-            }, (err) => { 
-                console.log(err);
-                reject(err);
-            });
-        });
-	}    
-	
+		let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
+		let participantKey = BITBOX.ECPair.fromWIF(client.wif)
+		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+
+		let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
+		let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
+		let satoshisAfterFee = betAmount - byteCount - 350;
+		// NOTE: must set the Sequence number below
+		transactionBuilder.addInput(txid, 0, bip68.encode({ blocks: 1 })); // No need to worry about sweeping the P2SH address.      
+		transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
+
+		let tx = transactionBuilder.transaction.buildIncomplete();
+
+		let signatureHash = tx.hashForWitnessV0(0, redeemScript, betAmount, hashType);
+		let hostSignature = hostKey.sign(signatureHash).toScriptSignature(hashType);
+		let participantSignature = participantKey.sign(signatureHash).toScriptSignature(hashType);
+
+		let redeemScriptSig = []; // start by pushing with true for makeBet mode
+
+		// host signature
+		redeemScriptSig.push(hostSignature.length);
+		hostSignature.forEach((item, index) => { redeemScriptSig.push(item); });
+
+		// push mode onto stack for MakeBet mode
+		redeemScriptSig.push(0x00); //use 0 for escape mode
+
+		if (redeemScript.length > 75) redeemScriptSig.push(0x4c);
+		redeemScriptSig.push(redeemScript.length);
+		redeemScript.forEach((item, index) => { redeemScriptSig.push(item); });
+		
+		redeemScriptSig = Buffer(redeemScriptSig);
+		
+		let redeemScriptSigHex = redeemScriptSig.toString('hex');
+		let redeemScriptHex = redeemScript.toString('hex');
+		
+		tx.setInputScript(0, redeemScriptSig);
+		let hex = tx.toHex();
+		
+		let txId = await Core.sendRawTransaction(hex);
+		return txId;
+	}
 }
