@@ -6,22 +6,24 @@ let chainbet = require('../chainbet');
 
 coinflip
     .version('0.0.1')
-    .option('-w, --wif [wif]', 'set WIF')
-    .option('-a, --address [address]', 'set address')
-    .option('-p, --pubkeyHex [pubkeyHex]', 'set pubkey')
-    .option('-r, --role [role]', 'set role')
-    .option('-d, --debug [debug]', 'set debugging support')
+    .option('-r, --role [role]', 'set role, 1=Host, 2=Client')
+    .option('-d, --debug [debug]', 'set debugger support (skips user prompts with default values)')
+    .option('-n, --newAddress [newAddress]', 'create a new wallet and address')
     .parse(process.argv);
+coinflip.debug = (coinflip.debug == "1" ? true : false);
+coinflip.cli = true;
 
 // 1) save user specified args to disk
 // TODO LATER
 
-if(coinflip.debug == undefined) {
+if(!coinflip.debug) {
     inquirer.prompt(function() { // 1) Ask the user to specify role (Host or Client)
         var questions = [];
         if(true)
-            questions.push({type: "input", name: "role", message: "Enter 1 for Host role, or 2 for Client role:"});
-
+            questions.push({ type: "input", 
+                            name: "role", 
+                            message: "Enter '1' to host a coinflip, OR Enter '2' to join a coinflip:",
+                            validate: function(input){ if(input == "1" || input == "2") {return true; } else { return false; }}});
         return questions;
     }())
 
@@ -50,8 +52,37 @@ if(coinflip.debug == undefined) {
     .then(function(){
         main(coinflip);
     });    
-} else
+} else {
     debug(coinflip);
+}
+
+async function main(context) {
+    
+    var bet;
+
+    // 1) start up chainfeed.org
+    let chainfeed = new chainbet.MessageFeed();
+    await chainfeed.checkConnection();
+
+    // 2) try to sweep up old escrows accounts from failed bets
+    // var escrows = jsonfile.readFileSync('./examples/escrows.json');
+    // escrows = await chainbet.CoinFlipShared.processOldEscrows(escrows);
+
+    // 3) startup a single bet workflow
+    if (context.role == "1") // Host Mode
+        bet = new chainbet.CoinFlipHost(context.wif, context.pubkey, context.address, chainfeed);
+    else // Client Mode
+        bet = new chainbet.CoinFlipClient(context.wif, context.pubkey, context.address, chainfeed, coinflip.cli, coinflip.debug);
+
+    // 4) create while loop to keep program alive while the async bet workflow is running.
+    while (!bet.complete) {
+        // do other stuff here...
+        await chainbet.Utils.sleep(500);
+    }
+
+    console.log("coinflip program complete.")
+    process.exit();
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -79,41 +110,6 @@ async function debug(context){
     context.pubkey = Buffer(wallet.pubkeyHex, 'hex')
     context.address = wallet.address
 
-    await main(context);
+    main(context);
 }
 
-async function main(context) {
-    
-    var bet;
-    let chainfeed = new chainbet.MessageFeed();
-    await chainfeed.checkConnection();
-
-    // Host Mode
-    if (context.role == "1") {
-
-        // create object that will manage the lifecycle of 1 coin flip bet
-        bet = new chainbet.CoinFlipHost(context.wif, context.pubkey, context.address, chainfeed);
-        
-        // create while loop to allow other actions during bet if needed
-        while (!bet.complete) {
-            // do other stuff...
-            await chainbet.Utils.sleep(500);
-        }
-
-    }
-    // Client Mode
-    else {
-
-        // create object that will manage the lifecycle of 1 coin flip bet
-        bet = new chainbet.CoinFlipClient(context.wif, context.pubkey, context.address, chainfeed);
-
-        // create while loop to allow other actions during bet if needed
-        while (!bet.complete) {
-            // do other stuff...
-            await chainbet.Utils.sleep(500);
-        }
-    }
-
-    console.log("coinflip program complete.")
-    process.exit();
-}

@@ -175,7 +175,7 @@ module.exports = class Core {
 			totalUtxo += item.satoshis;
 		});
 
-		let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: wallet.utxo.length }, { P2SH: 0 }) + op_return_buf.length + 75;
+		let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: wallet.utxo.length }, { P2SH: 0 }) + op_return_buf.length + 100;
 		let satoshisAfterFee = totalUtxo - byteCount
 
 		transactionBuilder.addOutput(op_return_buf, 0);        				        // OP_RETURN Message 

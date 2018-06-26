@@ -115,4 +115,5 @@ module.exports = class Client {
 
 		return BITBOX.Script.encode(script)
 	}
+	
 }

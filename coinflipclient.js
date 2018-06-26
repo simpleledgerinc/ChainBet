@@ -9,12 +9,15 @@ let CoinFlipShared = require('./coinflipshared')
 
 // CoinFlipClient class represents 1 bet's state management
 module.exports = class CoinFlipClient extends Client {
-    constructor(wif, pubkey, address, feed){ //, cliLock){
+    constructor(wif, pubkey, address, feed, cli=true, debug=false){ //, cliLock){
         super();
         this.wallet = {};
         this.wallet.wif = wif;
         this.wallet.pubkey = pubkey;
         this.wallet.address = address;
+
+        this.useCli = cli;
+        this.isDebugging = debug;
 
         this.betState = {};
         this.betState.phase = 1;
@@ -24,10 +27,11 @@ module.exports = class CoinFlipClient extends Client {
         // in future can set filter within the feed to improve performance
         this.feed = feed;
         
-        this.run();
+        if(this.useCli)
+            this.runCli();
     }
 
-    async run(){
+    async runCli(){
 
         // check account balance then run bet
         if(!(await Core.checkSufficientBalance(this.wallet.address))) {
@@ -51,15 +55,37 @@ module.exports = class CoinFlipClient extends Client {
                 // ignore target address field from host for now...
                 let newBet = hostPhase1Messages[hostPhase1Messages.length-1];
                 this.betState.hostCommitment = newBet.hostCommitment;
-                this.betState.betTxId = newBet.op_return_txnId;
+                this.betState.betId = newBet.op_return_txnId;
                 this.betState.amount = newBet.amount;
 
                 // NOTE: to simplify we will automatically accept the first bet host we see
-                console.log("Coin flip bet discovered! (automatically accepting...)");
-                console.log("Announcement Msg Txn: " + this.betState.betTxId);
+                console.log("Coin flip bet discovered! (msg txn: " + this.betState.betId + ")");
+                console.log("Bet amount: " + newBet.amount);
 
-                this.betState.phase = 2;
+                if(!this.isDebugging) {
+                    let answer = await inquirer.prompt([{
+                        type: "input", 
+                        name: "response", 
+                        message: "Do you want to accept this bet (y/n)?",
+                        validate: 
+                            function(input){ 
+                                if(input == "y" || input == "n") return true; 
+                                return false; 
+                            }
+                    }]);
+                    if(answer.response == "y")
+                        this.betState.phase = 2;
+                    else{
+                        console.log("Bet ignored...");
+                        this.complete = true;
+                        return;
+                    }
+                }
+                else{
+                    console.log("Automatically accepting bet (in debug mode)...")
+                }
             }
+
             await Utils.sleep(500);
         }
 
@@ -74,8 +100,8 @@ module.exports = class CoinFlipClient extends Client {
         console.log("| PHASE 2: Accepting bet & sending our secret commitment... |");
         console.log('-------------------------------------------------------------')
 
-        this.betState.clientTxId = await CoinFlipClient.sendPhase2Message(this.wallet, this.betState.betTxId, this.wallet.pubkey, this.betState.secretCommitment);
-        console.log("Msg to accept the Host's bet sent (txn: " + this.betState.clientTxId + ")")
+        this.betState.clientTxId = await CoinFlipClient.sendPhase2Message(this.wallet, this.betState.betId, this.wallet.pubkey, this.betState.secretCommitment);
+        console.log("Msg to accept the Host's bet sent (msg txn: " + this.betState.clientTxId + ")")
         this.betState.phase = 3;
 
         // Phase 3 -- keep checking for host to fund his side of bet...
@@ -85,7 +111,7 @@ module.exports = class CoinFlipClient extends Client {
 
         while(this.betState.phase == 3) {
 
-            let betId = this.betState.betTxId;
+            let betId = this.betState.betId;
             let clientId = this.betState.clientTxId;
 
             var clientPhase3Messages = this.feed.messages.filter(function(item){ 
@@ -104,8 +130,8 @@ module.exports = class CoinFlipClient extends Client {
                 this.betState.hostP2SHTxId = bet.hostP2SHTxId.toString('hex');
 
                 // NOTE: to simplify we will automatically accept the first bet host we see
-                console.log("The bet host has decided to bet with you! :-) (Msg txn: " + bet.op_return_txnId + ")");
-                console.log("The host's escrow is here: " + this.betState.hostP2SHTxId);
+                console.log("The bet host has decided to bet with you! :-) (msg txn: " + bet.op_return_txnId + ")");
+                console.log("The host's escrow txn: " + this.betState.hostP2SHTxId);
 
                 this.betState.phase = 4;
             }
@@ -136,8 +162,8 @@ module.exports = class CoinFlipClient extends Client {
         aliceEscrowSig = Utils.padSig(aliceEscrowSig);
 
         // prepare to send Phase 4 OP_RETURN
-        let phase4MsgTxId = await CoinFlipClient.sendPhase4Message(this.wallet, this.betState.betTxId, escrowTxid, bobEscrowSig, aliceEscrowSig);
-        console.log('Phase 4 message sent: ' + phase4MsgTxId);
+        let phase4MsgTxId = await CoinFlipClient.sendPhase4Message(this.wallet, this.betState.betId, escrowTxid, bobEscrowSig, aliceEscrowSig);
+        console.log('Phase 4 message sent (msg txn: ' + phase4MsgTxId +')');
         this.betState.phase = 5;
 
         console.log('\n-------------------------------------------------------------')
@@ -187,15 +213,15 @@ module.exports = class CoinFlipClient extends Client {
                     {
                         console.log("We're sorry. Something terrible went wrong when trying to claim your winnings... " + winTxnId);
                     } else {
-                        console.log("You've been paid! (txnId:" + winTxnId + ")");
+                        console.log("You've been paid! (txn: " + winTxnId + ")");
                     }
+                    this.complete = true;
                     return
                 }
                 console.log("You Lose... (Result is ODD)");
                 this.betState.phase = 6;
             }
             
-
             await Utils.sleep(500);
         }
 
@@ -206,8 +232,8 @@ module.exports = class CoinFlipClient extends Client {
             console.log('-------------------------------------------------------------')
             
             // 6) Send resignation to the client
-            let phase6TxnId = await CoinFlipClient.sendPhase6Message(this.wallet, this.betState.betTxId, this.betState.secret);
-            console.log("Resignation message was sent (txn: " + phase6TxnId + ")");
+            let phase6TxnId = await CoinFlipClient.sendPhase6Message(this.wallet, this.betState.betId, this.betState.secret);
+            console.log("Resignation message was sent (msg txn: " + phase6TxnId + ")");
         }
 
         this.complete = true;
@@ -249,7 +275,6 @@ module.exports = class CoinFlipClient extends Client {
     }
 
     static async clientClaimWin(wallet, hostSecret, clientSecret, betScript, betTxId, betAmount){
-        //return new Promise( (resolve, reject) => {
 
         let purseAmount = Core.purseAmount(betAmount);
 
@@ -289,17 +314,17 @@ module.exports = class CoinFlipClient extends Client {
         redeemScriptSig.push(betScript.length);
         betScript.forEach((item, index) => { redeemScriptSig.push(item); });
         
-        redeemScriptSig = Buffer(redeemScriptSig);
+        //redeemScriptSig = Buffer(redeemScriptSig);
         tx.setInputScript(0, redeemScriptSig);
         
         // uncomment for viewing script hex
-        // let redeemScriptSigHex = redeemScriptSig.toString('hex');
-        // let redeemScriptHex = redeemScript.toString('hex');
-        
+        console.log("Bet redeem script hex: " + redeemScriptSig.toString('hex'));
+        console.log("Bet Script Hex: " + betScript.toString('hex'));
+        console.log("Winnings ammount after fees: " + satoshisAfterFee);
+
         let hex = tx.toHex();
         
         let txId = await Core.sendRawTransaction(hex);
         return txId;
-        //});
     }
 }

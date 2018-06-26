@@ -21,7 +21,11 @@ chainbet.decode(scriptHex);
 ## Bitcoin Cash Coin Flip Demo Usage
 
 1) install node.js
+2) install `chainbet` globally `npm install -g chainbet`
+3) run coinflip via `node coinflip` & follow user instructions provided
+
+
 2) git clone repository
 3) `cd chainbet`
-4) update `/tmp/wallet.json` file with your compressed pubkey, address, and wif.
+4) update `examples/wallet.json` file with your compressed pubkey, address, and wif.
 5) run `node coinflip` and follow the instructions provided to you.
