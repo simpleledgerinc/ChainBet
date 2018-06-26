@@ -1,8 +1,8 @@
 var coinflip = require('commander');
 var inquirer = require('inquirer');
-let jsonfile = require('jsonfile');
+var jsonfile = require('jsonfile');
 
-let chainbet = require('../chainbet');
+var chainbet = require('../chainbet');
 
 coinflip
     .version('0.0.1')
