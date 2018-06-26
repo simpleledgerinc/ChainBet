@@ -318,8 +318,8 @@ module.exports = class CoinFlipClient extends Client {
         tx.setInputScript(0, redeemScriptSig);
         
         // uncomment for viewing script hex
-        console.log("Bet redeem script hex: " + redeemScriptSig.toString('hex'));
-        console.log("Bet Script Hex: " + betScript.toString('hex'));
+        // console.log("Bet redeem script hex: " + redeemScriptSig.toString('hex'));
+        // console.log("Bet Script Hex: " + betScript.toString('hex'));
         console.log("Winnings ammount after fees: " + satoshisAfterFee);
 
         let hex = tx.toHex();

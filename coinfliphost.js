@@ -398,8 +398,8 @@ module.exports = class CoinFlipHost extends Host {
         // let redeemScriptSigHex = redeemScriptSig.toString('hex');
         // let redeemScriptHex = redeemScript.toString('hex');
                 // uncomment for viewing script hex
-        console.log("Bet redeem script hex: " + redeemScriptSig.toString('hex'));
-        console.log("Bet Script Hex: " + betScript.toString('hex'));
+        // console.log("Bet redeem script hex: " + redeemScriptSig.toString('hex'));
+        // console.log("Bet Script Hex: " + betScript.toString('hex'));
         console.log("Winnings ammount after fees: " + satoshisAfterFee);
 
         let hex = tx.toHex();
