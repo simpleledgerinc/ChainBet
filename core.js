@@ -5,6 +5,36 @@ let Utils = require('./utils')
 
 module.exports = class Core {
 	
+	static async getAddressDetailsWithRetry(address, retries=10){
+		var result = undefined;
+		var count = 0;
+
+		while(result == undefined){
+			result = await BITBOX.Address.details(address);
+			count++;
+			if(count > retries)
+				throw new Error("BITBOX.Address.details endpoint is experiencing issues");
+			await Utils.sleep(250);
+		}
+
+		return result;
+	}
+
+	static async getUtxoWithRetry(address, retries=10){
+		var result = undefined;
+		var count = 0;
+
+		while(result == undefined){
+			result = await Core.getUtxo(address)
+			count++;
+			if(count > retries)
+				throw new Error("BITBOX.Address.utxo endpoint is experiencing issues");
+			await Utils.sleep(250);
+		}
+
+		return result;
+	}
+
 	static async getUtxo(address) {
 		return new Promise( (resolve, reject) => {
 			BITBOX.Address.utxo(address).then((result) => { 
@@ -14,6 +44,31 @@ module.exports = class Core {
 				reject(err)
 			})
 		})
+	}
+
+	static purseAmount(betAmount){
+		let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
+		return (betAmount * 2 ) - byteCount - 750;
+	}
+
+	static async checkSufficientBalance(address) {
+		let addrDetails = await Core.getAddressDetailsWithRetry(address);
+		
+		if (addrDetails.unconfirmedBalanceSat <= 0 && addrDetails.balanceSat == 0) {
+			console.log("The address provided has a zero balance... please add funds to this address.");
+			return false;
+		}
+
+		console.log("confirmed balance (sat): " + addrDetails.balanceSat);
+		console.log("unconfirmed balance (sat): " + addrDetails.unconfirmedBalanceSat);
+		return true;
+
+	}
+	
+	static async getConfirmedAndUnconfirmedAddressBalance(address){
+		let addrDetails = await Core.getAddressDetailsWithRetry(address);
+		let total = addrDetails.balanceSat + addrDetails.unconfirmedBalanceSat;
+		return total;
 	}
 
 	static decodePhaseData(buf, networkByte=0x00) {
@@ -101,11 +156,11 @@ module.exports = class Core {
 				totalUtxo += item.satoshis;
 			});
 	
-			let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: wallet.utxo.length }, { P2SH: 0 }) + op_return_buf.length + 1000;
+			let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: wallet.utxo.length }, { P2SH: 0 }) + op_return_buf.length + 75;
 			let satoshisAfterFee = totalUtxo - byteCount
 	
 			transactionBuilder.addOutput(op_return_buf, 0);        				        // OP_RETURN Message 
-			transactionBuilder.addOutput(wallet.utxo[0].cashAddress, satoshisAfterFee); // Change 
+			transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee); // Change 
 			//console.log("txn fee: " + byteCount);
 			//console.log("satoshis left: " + satoshisAfterFee);
 			let key = BITBOX.ECPair.fromWIF(wallet.wif);
@@ -155,13 +210,14 @@ module.exports = class Core {
 			let p2sh_hash160_hex = p2sh_hash160.toString('hex');
 			let scriptPubKey = BITBOX.Script.scriptHash.output.encode(p2sh_hash160);
 
-			let address = BITBOX.Address.toLegacyAddress(BITBOX.Address.fromOutputScript(scriptPubKey));
+			let escrowAddress = BITBOX.Address.toLegacyAddress(BITBOX.Address.fromOutputScript(scriptPubKey));
+			let changeAddress = BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress);
 			// console.log("escrow address: " + address);
 			// console.log("change satoshi: " + satoshisAfterFee);
 			// console.log("change bet amount: " + betAmount);
 
-			transactionBuilder.addOutput(address, betAmount);
-			transactionBuilder.addOutput(wallet.utxo[0].cashAddress, satoshisAfterFee);
+			transactionBuilder.addOutput(escrowAddress, betAmount);
+			transactionBuilder.addOutput(changeAddress, satoshisAfterFee);
 			//console.log("Added escrow outputs...");
 
 			let key = BITBOX.ECPair.fromWIF(wallet.wif);
@@ -178,7 +234,11 @@ module.exports = class Core {
 			//console.log("Escrow hex:", hex);
 			BITBOX.RawTransactions.sendRawTransaction(hex).then((result) => { 
 				//console.log('Escrow txid:', result);
-				if (result.length < 60){ // Very rough txid size check for failure
+				if (result == undefined)
+				{
+					throw new Error("Error sending raw transaction");
+				}
+				else if (result.length < 60){ // Very rough txid size check for failure
 					console.log(result);
 					reject("txid too small");
 				}
@@ -205,7 +265,7 @@ module.exports = class Core {
             let satoshisAfterFee = betAmount - byteCount - 350;
             // NOTE: must set the Sequence number below
             transactionBuilder.addInput(txid, 0, bip68.encode({ blocks: 1 })); // No need to worry about sweeping the P2SH address.      
-            transactionBuilder.addOutput(wallet.utxo[0].cashAddress, satoshisAfterFee);
+            transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
     
             let tx = transactionBuilder.transaction.buildIncomplete();
     
@@ -249,139 +309,4 @@ module.exports = class Core {
         });
 	}    
 	
-	static buildCoinFlipBetScriptBuffer(hostPubKey, hostCommitment, clientPubKey, clientCommitment){
-		let script = [
-			BITBOX.Script.opcodes.OP_IF,
-			BITBOX.Script.opcodes.OP_IF,
-			BITBOX.Script.opcodes.OP_HASH160,
-			clientCommitment.length
-		];
-		
-		clientCommitment.forEach(i => script.push(i));
-	
-		script = script.concat([
-			BITBOX.Script.opcodes.OP_EQUALVERIFY,
-			BITBOX.Script.opcodes.OP_ELSE,
-			0x51, // use 0x58 for 8 blocks
-			BITBOX.Script.opcodes.OP_CHECKSEQUENCEVERIFY,
-			BITBOX.Script.opcodes.OP_DROP,
-			BITBOX.Script.opcodes.OP_ENDIF,
-			hostPubKey.length
-		]);
-		
-		hostPubKey.forEach(i => script.push(i));
-	
-		script = script.concat([
-			BITBOX.Script.opcodes.OP_CHECKSIG,
-			BITBOX.Script.opcodes.OP_ELSE,
-			BITBOX.Script.opcodes.OP_DUP,
-			BITBOX.Script.opcodes.OP_HASH160,
-			clientCommitment.length
-		]);
-		clientCommitment.forEach(i => script.push(i));
-	
-		script = script.concat([
-			BITBOX.Script.opcodes.OP_EQUALVERIFY,
-			BITBOX.Script.opcodes.OP_OVER,
-			BITBOX.Script.opcodes.OP_HASH160,
-			hostCommitment.length
-		]);
-		hostCommitment.forEach(i => script.push(i));
-	
-		script = script.concat([
-			BITBOX.Script.opcodes.OP_EQUALVERIFY,
-			BITBOX.Script.opcodes.OP_4,
-			BITBOX.Script.opcodes.OP_SPLIT,
-			BITBOX.Script.opcodes.OP_DROP,
-			BITBOX.Script.opcodes.OP_BIN2NUM,
-			BITBOX.Script.opcodes.OP_SWAP,
-			BITBOX.Script.opcodes.OP_4,
-			BITBOX.Script.opcodes.OP_SPLIT,
-			BITBOX.Script.opcodes.OP_DROP,
-			BITBOX.Script.opcodes.OP_BIN2NUM,
-			BITBOX.Script.opcodes.OP_ADD,
-			BITBOX.Script.opcodes.OP_2,
-			BITBOX.Script.opcodes.OP_MOD,
-			BITBOX.Script.opcodes.OP_0,
-			BITBOX.Script.opcodes.OP_EQUALVERIFY,
-			clientPubKey.length
-		]);
-		clientPubKey.forEach(i => script.push(i));
-	
-		script = script.concat([
-			BITBOX.Script.opcodes.OP_CHECKSIG,
-			BITBOX.Script.opcodes.OP_ENDIF,
-		]);
-		
-		return BITBOX.Script.encode(script);
-	}
-	
-    static buildCoinFlipHostEscrowScript(hostPubKey, hostCommitment, clientPubKey){
-    
-        let script = [
-            BITBOX.Script.opcodes.OP_IF, 
-            BITBOX.Script.opcodes.OP_HASH160,
-            hostCommitment.length
-        ];
-        
-        hostCommitment.forEach(i => script.push(i));
-    
-        script = script.concat([
-            BITBOX.Script.opcodes.OP_EQUALVERIFY,
-            BITBOX.Script.opcodes.OP_2,
-            hostPubKey.length
-        ]);
-        
-        hostPubKey.forEach(i => script.push(i));
-        script.push(clientPubKey.length);
-        clientPubKey.forEach(i => script.push(i));
-    
-        script = script.concat([
-            BITBOX.Script.opcodes.OP_2,
-            BITBOX.Script.opcodes.OP_CHECKMULTISIG,
-            BITBOX.Script.opcodes.OP_ELSE,
-            0x58, // use 0x58 for 8 blocks
-            BITBOX.Script.opcodes.OP_CHECKSEQUENCEVERIFY,
-            BITBOX.Script.opcodes.OP_DROP,
-            hostPubKey.length
-        ]);
-    
-        hostPubKey.forEach(i => script.push(i));
-        script = script.concat([
-            BITBOX.Script.opcodes.OP_CHECKSIG,
-            BITBOX.Script.opcodes.OP_ENDIF
-        ]);
-        
-        return BITBOX.Script.encode(script);
-	}
-	
-    static buildCoinFlipClientEscrowScript(hostPubKey, clientPubKey){
-        let script = [
-            BITBOX.Script.opcodes.OP_IF, 
-            BITBOX.Script.opcodes.OP_2,
-            hostPubKey.length
-        ]
-        
-        hostPubKey.forEach(i => script.push(i));
-        script.push(clientPubKey.length);
-        clientPubKey.forEach(i => script.push(i));
-    
-        script = script.concat([
-            BITBOX.Script.opcodes.OP_2,
-            BITBOX.Script.opcodes.OP_CHECKMULTISIG,
-            BITBOX.Script.opcodes.OP_ELSE,
-            0x58, // use 0x58 for 8 blocks
-            BITBOX.Script.opcodes.OP_CHECKSEQUENCEVERIFY,
-            BITBOX.Script.opcodes.OP_DROP,
-            clientPubKey.length
-        ]);
-    
-        clientPubKey.forEach(i => script.push(i));
-        script = script.concat([
-            BITBOX.Script.opcodes.OP_CHECKSIG,
-            BITBOX.Script.opcodes.OP_ENDIF
-        ]);
-        
-        return BITBOX.Script.encode(script);
-    }
 }

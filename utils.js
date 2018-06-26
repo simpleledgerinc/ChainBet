@@ -6,6 +6,13 @@ let base58 = require('bs58');
 
 module.exports = class Utils {
 
+	// static removeRightZeros(hexString){
+	// 	while(hexString[hexString.length-1]=='0')
+	// 	{
+	// 		hexStrign
+	// 	}
+	// }
+
 	static padSig(sig){
 		if(sig.length == 71){
 			var sigHex = sig.toString('hex');
@@ -39,7 +46,7 @@ module.exports = class Utils {
 		var hex = secret_number.toString(16)
 		const len = hex.length
 		for (let i = 0; i < 64 - len; i++) {
-		hex = '0' + hex;
+		hex = hex + '0';
 		}
 		let buf = Buffer.from(hex, 'hex')
 		return buf
