@@ -1,0 +1,12 @@
+[
+    {
+        "wif": "KynGEeMHDZraMZ3H9c1txXu161XYWARGEgxLosVhLyZToyENzCrD", 
+        "pubkeyHex": "0207EE3C3969BA4CCE824B611A45C5958158044CCC720599AB64EEE7A319D6250C", 
+        "address": "1GCZq1eLfhSQgra5pTHF2rVDWuX1bCbcS9"
+    },
+    {
+        "wif": "KxZZPvKVQc6xxtx8wt1BWZDG7ybBYEA6jPawpisGXeCZu97oJQ5d", 
+        "pubkeyHex": "03fd246c1d2d2994d57b5a1a28c76f724836109886ceda2f00b9da961fc5884278", 
+        "address": "1NTTdiX22sQ9ZDTRBpBWRcFoUQiJH3K4da"
+    }
+]

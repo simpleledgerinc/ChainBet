@@ -41,7 +41,6 @@ module.exports = class Client {
 		return BITBOX.Script.encode(script)
 	}
 
-
 	// Phase 4: Bet Participant Funding
 	static encodePhase4(betTxId, participantTxId, participantSig1, participantSig2) {
 
@@ -112,7 +111,6 @@ module.exports = class Client {
 		betTxId.forEach((item, index) => { script.push(item); })
 
 		// 32 byte Secret value
-		secretValue = Buffer(secretValue, 'hex')
 		secretValue.forEach((item, index) => { script.push(item); })
 
 		return BITBOX.Script.encode(script)

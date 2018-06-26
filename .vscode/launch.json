@@ -8,8 +8,8 @@
             "type": "node",
             "request": "launch",
             "name": "Launch coinflip.js with args",
-            "program": "${workspaceFolder}/coinflip.js",
-            "args": [ "-m", "1"]
+            "program": "${workspaceFolder}/examples/coinflip.js",
+            "args": [ "-r", "2", "-d", "1"]
         },
         {
             "type": "node",
