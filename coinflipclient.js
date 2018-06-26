@@ -82,7 +82,8 @@ module.exports = class CoinFlipClient extends Client {
                     }
                 }
                 else{
-                    console.log("Automatically accepting bet (in debug mode)...")
+                    console.log("Automatically accepting bet (in debug mode)...");
+                    this.betState.phase = 2;
                 }
             }
 
@@ -92,7 +93,7 @@ module.exports = class CoinFlipClient extends Client {
         // Phase 2 -- allow user to choose a secret number then send host our acceptance message
         //let answer = await inquirer.prompt([{type: "input", name: "secret", message: "Choose a secret number: "}]);
         //this.betState.secret = Utils.secret_2_buf(parseInt(answer.secret)); 
-        this.betState.secret = BITBOX.Crypto.randomBytes(32); //Buffer("c667c14e218cf530c405e2d50def250b0c031f69593e95171048c772ad0e1bce",'hex');
+        this.betState.secret = Buffer("936d751f4169567eb21017c8814c2aa51113ce5cdf6d4a8a379a21e084444389",'hex'); //BITBOX.Crypto.randomBytes(32); //Buffer("c667c14e218cf530c405e2d50def250b0c031f69593e95171048c772ad0e1bce",'hex');
         this.betState.secretCommitment = BITBOX.Crypto.hash160(this.betState.secret);
         console.log("Your secret number is: " + this.betState.secret.slice(0, 4).readInt32LE());
 
@@ -195,19 +196,18 @@ module.exports = class CoinFlipClient extends Client {
                     //throw new Error("Raw bet transaction could not be decoded.");
 
                 // must remove right hand zeros so that the numbers aren't always even..
-                let client_int_le = this.betState.secret.slice(0, 4).readInt32LE();
-                let host_int_le = host_secret.slice(0, 4).readInt32LE();
+                let client_int_le = this.betState.secret.readInt32LE();
+                let host_int_le = host_secret.readInt32LE();
 
-                console.log("Your secret (hex): " + this.betState.secret.toString('hex'));
-                console.log("Your secret (int LE): " + client_int_le);
-                console.log("Host secret (hex): " + host_secret.toString('hex'));
-                console.log("Host secret (int LE): " + host_int_le);
-                console.log("Result LE: " + (client_int_le + host_int_le));
+                console.log("  " + client_int_le + " <- your secret (shortened)");
+                console.log("+ " + host_int_le + " <- host's secret (shortened)");
+                console.log("=============================");
+                console.log("  " + (client_int_le + host_int_le + " <- result"));
             
                 let isEven = (client_int_le + host_int_le) % 2 == 0;
 
                 if(isEven) {
-                    console.log("You win! (Result is EVEN)");
+                    console.log("You win! (because the result is EVEN)");
                     let winTxnId = await CoinFlipClient.clientClaimWin(this.wallet, host_secret, this.betState.secret, betScriptBuf, bet_txnId, this.betState.amount);
                     if(winTxnId.length != 64)
                     {
@@ -218,7 +218,7 @@ module.exports = class CoinFlipClient extends Client {
                     this.complete = true;
                     return
                 }
-                console.log("You Lose... (Result is ODD)");
+                console.log("You Lose... (becuase the result is ODD)");
                 this.betState.phase = 6;
             }
             
@@ -314,7 +314,7 @@ module.exports = class CoinFlipClient extends Client {
         redeemScriptSig.push(betScript.length);
         betScript.forEach((item, index) => { redeemScriptSig.push(item); });
         
-        //redeemScriptSig = Buffer(redeemScriptSig);
+        redeemScriptSig = Buffer(redeemScriptSig);
         tx.setInputScript(0, redeemScriptSig);
         
         // uncomment for viewing script hex
