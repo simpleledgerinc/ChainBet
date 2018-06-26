@@ -68,7 +68,7 @@ module.exports = class CoinFlipClient extends Client {
         //this.betState.secret = Utils.secret_2_buf(parseInt(answer.secret)); 
         this.betState.secret = BITBOX.Crypto.randomBytes(32); //Buffer("c667c14e218cf530c405e2d50def250b0c031f69593e95171048c772ad0e1bce",'hex');
         this.betState.secretCommitment = BITBOX.Crypto.hash160(this.betState.secret);
-        console.log("Your secret number is: " + parseInt(this.betState.secret.slice(0, 4).toString('hex'), 16));
+        console.log("Your secret number is: " + this.betState.secret.slice(0, 4).readInt32LE());
 
         console.log('\n--------------------------------------------------------------')
         console.log("| PHASE 2: Accepting bet & sending our secret commitment... |");
@@ -169,21 +169,21 @@ module.exports = class CoinFlipClient extends Client {
                     //throw new Error("Raw bet transaction could not be decoded.");
 
                 // must remove right hand zeros so that the numbers aren't always even..
-                let client_int = parseInt(this.betState.secret.slice(0, 4).toString('hex'), 16);
-                let host_int = parseInt(host_secret.slice(0, 4).toString('hex'), 16);
+                let client_int_le = this.betState.secret.slice(0, 4).readInt32LE();
+                let host_int_le = host_secret.slice(0, 4).readInt32LE();
 
                 console.log("Your secret (hex): " + this.betState.secret.toString('hex'));
-                console.log("Your secret (int): " + client_int);
+                console.log("Your secret (int LE): " + client_int_le);
                 console.log("Host secret (hex): " + host_secret.toString('hex'));
-                console.log("Host secret (int): " + host_int);
-                console.log("Result: " + (client_int + host_int));
+                console.log("Host secret (int LE): " + host_int_le);
+                console.log("Result LE: " + (client_int_le + host_int_le));
             
-                let isEven = (client_int + host_int) % 2 == 0;
+                let isEven = (client_int_le + host_int_le) % 2 == 0;
 
                 if(isEven) {
                     console.log("You win! (Result is EVEN)");
                     let winTxnId = await CoinFlipClient.clientClaimWin(this.wallet, host_secret, this.betState.secret, betScriptBuf, bet_txnId, this.betState.amount);
-                    if(winTxnId.split(" ").length > 0 || winTxnId.split(":").length > 0)
+                    if(winTxnId.length != 64)
                     {
                         console.log("We're sorry. Something terrible went wrong when trying to claim your winnings... " + winTxnId);
                     } else {
@@ -191,7 +191,6 @@ module.exports = class CoinFlipClient extends Client {
                     }
                     return
                 }
-
                 console.log("You Lose... (Result is ODD)");
                 this.betState.phase = 6;
             }
@@ -250,79 +249,57 @@ module.exports = class CoinFlipClient extends Client {
     }
 
     static async clientClaimWin(wallet, hostSecret, clientSecret, betScript, betTxId, betAmount){
-        return new Promise( (resolve, reject) => {
+        //return new Promise( (resolve, reject) => {
 
-            let purseAmount = Core.purseAmount(betAmount);
+        let purseAmount = Core.purseAmount(betAmount);
 
-            let clientKey = BITBOX.ECPair.fromWIF(wallet.wif)
-            let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
-    
-            let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
+        let clientKey = BITBOX.ECPair.fromWIF(wallet.wif)
+        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
-            let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
-            let satoshisAfterFee = purseAmount - byteCount - betScript.length - 142;
-            transactionBuilder.addInput(betTxId, 0)
-            transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
-    
-            let tx = transactionBuilder.transaction.buildIncomplete();
-    
-            // Sign bet tx
-            let sigHash = tx.hashForWitnessV0(0, betScript, purseAmount, hashType);
-            let clientSig = clientKey.sign(sigHash).toScriptSignature(hashType);
-    
-            let redeemScriptSig = []
-    
-            // client signature
-            redeemScriptSig.push(clientSig.length)
-            clientSig.forEach((item, index) => { redeemScriptSig.push(item); });
-    
-            // host secret
-            redeemScriptSig.push(hostSecret.length);
-            hostSecret.forEach((item, index) => { redeemScriptSig.push(item); });
-    
-            // client secret
-            redeemScriptSig.push(clientSecret.length);
-            clientSecret.forEach((item, index) => { redeemScriptSig.push(item); });
-    
-            redeemScriptSig.push(0x00); // zero is client wins mode
-    
-            if (betScript.length > 75) redeemScriptSig.push(0x4c);
-            redeemScriptSig.push(betScript.length);
-            betScript.forEach((item, index) => { redeemScriptSig.push(item); });
-            
-            redeemScriptSig = Buffer(redeemScriptSig);
-            tx.setInputScript(0, redeemScriptSig);
-            
-            // uncomment for viewing script hex
-            // let redeemScriptSigHex = redeemScriptSig.toString('hex');
-            // let redeemScriptHex = redeemScript.toString('hex');
-            
-            let hex = tx.toHex();
-            
-            //console.log("clientClaimWin hex:", hex);
-            BITBOX.RawTransactions.sendRawTransaction(hex).then((result) => { 
-                console.log('clientClaimWin txid: ', result);
-                if (result.length < 60){ // Very rough txid size check for failure
-                    console.log(result);
-                    reject("txid too small");
-                }
-                else {
-                    resolve(result);
-                }
-            }, (err) => { 
-                console.log(err);
-                reject(err);
-            });
-        });
+        let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
+
+        let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
+        let satoshisAfterFee = purseAmount - byteCount - betScript.length - 142;
+        transactionBuilder.addInput(betTxId, 0)
+        transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
+
+        let tx = transactionBuilder.transaction.buildIncomplete();
+
+        // Sign bet tx
+        let sigHash = tx.hashForWitnessV0(0, betScript, purseAmount, hashType);
+        let clientSig = clientKey.sign(sigHash).toScriptSignature(hashType);
+
+        let redeemScriptSig = []
+
+        // client signature
+        redeemScriptSig.push(clientSig.length)
+        clientSig.forEach((item, index) => { redeemScriptSig.push(item); });
+
+        // host secret
+        redeemScriptSig.push(hostSecret.length);
+        hostSecret.forEach((item, index) => { redeemScriptSig.push(item); });
+
+        // client secret
+        redeemScriptSig.push(clientSecret.length);
+        clientSecret.forEach((item, index) => { redeemScriptSig.push(item); });
+
+        redeemScriptSig.push(0x00); // zero is client wins mode
+
+        if (betScript.length > 75) redeemScriptSig.push(0x4c);
+        redeemScriptSig.push(betScript.length);
+        betScript.forEach((item, index) => { redeemScriptSig.push(item); });
+        
+        redeemScriptSig = Buffer(redeemScriptSig);
+        tx.setInputScript(0, redeemScriptSig);
+        
+        // uncomment for viewing script hex
+        // let redeemScriptSigHex = redeemScriptSig.toString('hex');
+        // let redeemScriptHex = redeemScript.toString('hex');
+        
+        let hex = tx.toHex();
+        
+        let txId = await Core.sendRawTransaction(hex);
+        return txId;
+        //});
     }
 }
-
-
-// bet redeem script
-//---------------------
-
-
-
-// bet script
-//---------------------
-

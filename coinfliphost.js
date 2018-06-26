@@ -39,11 +39,9 @@ module.exports = class CoinFlipHost extends Host {
         let answer1 = await inquirer.prompt([{type: "input", name: "amount", message: "Enter bet amount to init bet on BCH network: "}]);
         this.betState.amount = parseInt(answer1.amount);
 
-        //let answer2 = await inquirer.prompt([{type: "input", name: "secret", message: "Choose a secret number for coinflip: "}]);
-        this.betState.secret = BITBOX.Crypto.randomBytes(32); //Utils.secret_2_buf(parseInt(answer2.secret)); 
+        this.betState.secret = BITBOX.Crypto.randomBytes(32); 
         this.betState.secretCommitment = BITBOX.Crypto.hash160(this.betState.secret);
-        console.log("Your secret number is: " + parseInt(this.betState.secret.slice(0, 4).toString('hex'), 16));
-
+        console.log("Your secret number is: " + this.betState.secret.slice(0, 4).readInt32LE());
 
         // Phase 1 -- Send out a bet announcement
         console.log('\n-----------------------------------------------------------')
@@ -93,11 +91,10 @@ module.exports = class CoinFlipHost extends Host {
         console.log('-------------------------------------------------------------');
 
         let escrowBuf = CoinFlipShared.buildCoinFlipHostEscrowScript(this.wallet.pubkey, this.betState.secretCommitment, this.betState.clientmultisigPubKey);
-        //console.log(BITBOX.Script.toASM(escrowBuf));
         this.wallet.utxo = await Core.getUtxoWithRetry(this.wallet.address);
         let escrowTxid = await Core.createEscrow(this.wallet, escrowBuf, this.betState.amount);
         console.log('Our Escrow Txn: ' + escrowTxid);
-        await Utils.sleep(3000); // need to wait for BITBOX mempool to sync
+        await Utils.sleep(2000); // short wait for BITBOX mempool to sync
 
         console.log('Sending client phase 3 message with our escrow details and multisigpub key...');
         let phase3MsgTxId = await CoinFlipHost.sendPhase3Message(this.wallet, this.betState.betTxId, this.betState.clientTxId, escrowTxid);
@@ -215,7 +212,7 @@ module.exports = class CoinFlipHost extends Host {
         console.log('-------------------------------------------------------------');
 
         let winTxnId = await CoinFlipHost.hostClaimWinSecret(this.wallet, betScriptBuf, betTxId, this.betState.amount);
-        if(winTxnId.split(" ").length > 0 || winTxnId.split(":").length > 0)
+        if(winTxnId.length != 64)
         {
             console.log("We're sorry. Something terrible went wrong when trying to claim your winnings... " + winTxnId);
         } else {
@@ -246,223 +243,190 @@ module.exports = class CoinFlipHost extends Host {
     static async redeemEscrowToMakeBet(wallet, hostSecret, clientSig1, clientSig2, 
                                         hostRedeemScript, clientRedeemScript, betScript, 
                                         hostTxId, clientTxId, betAmount) {
-        return new Promise( (resolve, reject) => {
+        //return new Promise( (resolve, reject) => {
 
-            let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
-            //let clientKey = BITBOX.ECPair.fromWIF(client.wif)
-            let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
-    
-            let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
-            let satoshisAfterFee = Core.purseAmount(betAmount);
-            transactionBuilder.addInput(hostTxId, 0);
-            transactionBuilder.addInput(clientTxId, 0);
+        let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
+        //let clientKey = BITBOX.ECPair.fromWIF(client.wif)
+        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
-            // Determine bet address
-            let p2sh_hash160 = BITBOX.Crypto.hash160(betScript);
-            let scriptPubKey = BITBOX.Script.scriptHash.output.encode(p2sh_hash160);
-            let betAddress = BITBOX.Address.fromOutputScript(scriptPubKey);
-            transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(betAddress), satoshisAfterFee);
-    
-            let tx = transactionBuilder.transaction.buildIncomplete();
-    
-            // Sign alices escrow
-            let sigHash = tx.hashForWitnessV0(0, hostRedeemScript, betAmount, hashType);
-            let hostSig = hostKey.sign(sigHash).toScriptSignature(hashType);
-            //let clientSig = //clientKey.sign(sigHash).toScriptSignature(hashType);
-    
-            let redeemScriptSig = []; // start by pushing with true for makeBet mode
-    
-            // multisig off by one fix
-            redeemScriptSig.push(BITBOX.Script.opcodes.OP_0);
-    
-            // host signature
-            redeemScriptSig.push(hostSig.length);
-            hostSig.forEach((item, index) => { redeemScriptSig.push(item); });
-    
-            // participant signature
-            redeemScriptSig.push(clientSig2.length)
-            clientSig2.forEach((item, index) => { redeemScriptSig.push(item); });
-            
-            // alice secret
-            redeemScriptSig.push(hostSecret.length);
-            hostSecret.forEach((item, index) => { redeemScriptSig.push(item); });
-    
-            // push mode onto stack for MakeBet mode
-            redeemScriptSig.push(0x51); // non-zero is makeBet mode
-    
-            if (hostRedeemScript.length > 75) redeemScriptSig.push(0x4c);
-            redeemScriptSig.push(hostRedeemScript.length);
-            hostRedeemScript.forEach((item, index) => { redeemScriptSig.push(item); });
-            
-            redeemScriptSig = Buffer(redeemScriptSig);
-            tx.setInputScript(0, redeemScriptSig);
-    
-            // Sign bob's escrow
-            let sigHash2 = tx.hashForWitnessV0(1, clientRedeemScript, betAmount, hashType);
-            let hostSig2 = hostKey.sign(sigHash2).toScriptSignature(hashType);
-            //let clientSig2 = clientKey.sign(sigHash2).toScriptSignature(hashType);
-    
-            let redeemScriptSig2 = []
-    
-            // multisig off by one fix
-            redeemScriptSig2.push(BITBOX.Script.opcodes.OP_0)
-    
-            // host signature
-            redeemScriptSig2.push(hostSig2.length)
-            hostSig2.forEach((item, index) => { redeemScriptSig2.push(item); })
-    
-            // participant signature
-            redeemScriptSig2.push(clientSig1.length)
-            clientSig1.forEach((item, index) => { redeemScriptSig2.push(item); });
-    
-            // push mode onto stack for MakeBet mode
-            redeemScriptSig2.push(0x51); // non-zero is makeBet mode
-    
-            if (clientRedeemScript.length > 75) redeemScriptSig2.push(0x4c)
-            redeemScriptSig2.push(clientRedeemScript.length)
-            clientRedeemScript.forEach((item, index) => { redeemScriptSig2.push(item); });
-            
-            redeemScriptSig2 = Buffer(redeemScriptSig2)
-            tx.setInputScript(1, redeemScriptSig2)
-            
-            // uncomment for viewing script hex
-            // let redeemScriptSigHex = redeemScriptSig.toString('hex');
-            // let redeemScriptHex = redeemScript.toString('hex');
-            
-            let hex = tx.toHex();
-            
-            //console.log("Make Bet txn hex:", hex);
-            BITBOX.RawTransactions.sendRawTransaction(hex).then((result) => { 
-                //console.log('Redeem escrow txid:', result);
-                if (result.length < 60) // Very rough txid size check for failure
-                    reject("txid too small");
-                else {
-                    resolve(result);
-                }
-            }, (err) => { 
-                console.log(err);
-                reject(err);
-            });
-        });
+        let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
+        let satoshisAfterFee = Core.purseAmount(betAmount);
+        transactionBuilder.addInput(hostTxId, 0);
+        transactionBuilder.addInput(clientTxId, 0);
+
+        // Determine bet address
+        let p2sh_hash160 = BITBOX.Crypto.hash160(betScript);
+        let scriptPubKey = BITBOX.Script.scriptHash.output.encode(p2sh_hash160);
+        let betAddress = BITBOX.Address.fromOutputScript(scriptPubKey);
+        transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(betAddress), satoshisAfterFee);
+
+        let tx = transactionBuilder.transaction.buildIncomplete();
+
+        // Sign alices escrow
+        let sigHash = tx.hashForWitnessV0(0, hostRedeemScript, betAmount, hashType);
+        let hostSig = hostKey.sign(sigHash).toScriptSignature(hashType);
+        //let clientSig = //clientKey.sign(sigHash).toScriptSignature(hashType);
+
+        let redeemScriptSig = []; // start by pushing with true for makeBet mode
+
+        // multisig off by one fix
+        redeemScriptSig.push(BITBOX.Script.opcodes.OP_0);
+
+        // host signature
+        redeemScriptSig.push(hostSig.length);
+        hostSig.forEach((item, index) => { redeemScriptSig.push(item); });
+
+        // participant signature
+        redeemScriptSig.push(clientSig2.length)
+        clientSig2.forEach((item, index) => { redeemScriptSig.push(item); });
+        
+        // alice secret
+        redeemScriptSig.push(hostSecret.length);
+        hostSecret.forEach((item, index) => { redeemScriptSig.push(item); });
+
+        // push mode onto stack for MakeBet mode
+        redeemScriptSig.push(0x51); // non-zero is makeBet mode
+
+        if (hostRedeemScript.length > 75) redeemScriptSig.push(0x4c);
+        redeemScriptSig.push(hostRedeemScript.length);
+        hostRedeemScript.forEach((item, index) => { redeemScriptSig.push(item); });
+        
+        redeemScriptSig = Buffer(redeemScriptSig);
+        tx.setInputScript(0, redeemScriptSig);
+
+        // Sign bob's escrow
+        let sigHash2 = tx.hashForWitnessV0(1, clientRedeemScript, betAmount, hashType);
+        let hostSig2 = hostKey.sign(sigHash2).toScriptSignature(hashType);
+        //let clientSig2 = clientKey.sign(sigHash2).toScriptSignature(hashType);
+
+        let redeemScriptSig2 = []
+
+        // multisig off by one fix
+        redeemScriptSig2.push(BITBOX.Script.opcodes.OP_0)
+
+        // host signature
+        redeemScriptSig2.push(hostSig2.length)
+        hostSig2.forEach((item, index) => { redeemScriptSig2.push(item); })
+
+        // participant signature
+        redeemScriptSig2.push(clientSig1.length)
+        clientSig1.forEach((item, index) => { redeemScriptSig2.push(item); });
+
+        // push mode onto stack for MakeBet mode
+        redeemScriptSig2.push(0x51); // non-zero is makeBet mode
+
+        if (clientRedeemScript.length > 75) redeemScriptSig2.push(0x4c)
+        redeemScriptSig2.push(clientRedeemScript.length)
+        clientRedeemScript.forEach((item, index) => { redeemScriptSig2.push(item); });
+        
+        redeemScriptSig2 = Buffer(redeemScriptSig2)
+        tx.setInputScript(1, redeemScriptSig2)
+        
+        // uncomment for viewing script hex
+        // let redeemScriptSigHex = redeemScriptSig.toString('hex');
+        // let redeemScriptHex = redeemScript.toString('hex');
+        
+        let hex = tx.toHex();
+        
+        let txId = await Core.sendRawTransaction(hex);
+        return txId;
     }
 
     static async hostClaimWinSecret(wallet, betScript, betTxId, betAmount){
-        return new Promise( (resolve, reject) => {
+        //return new Promise( (resolve, reject) => {
 
-            let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
-            let clientKey = BITBOX.ECPair.fromWIF(client.wif)
-            let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+        let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
+        let clientKey = BITBOX.ECPair.fromWIF(client.wif)
+        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
-            let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
-            let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
-            let satoshisAfterFee = betAmount - byteCount - 800;
-            transactionBuilder.addInput(betTxId, 0)
-            transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
+        let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
+        let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
+        let satoshisAfterFee = betAmount - byteCount - 800;
+        transactionBuilder.addInput(betTxId, 0)
+        transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
 
-            let tx = transactionBuilder.transaction.buildIncomplete();
+        let tx = transactionBuilder.transaction.buildIncomplete();
 
-            // Sign bet tx
-            let sigHash = tx.hashForWitnessV0(0, betScript, betAmount, hashType);
-            let hostSig = hostKey.sign(sigHash).toScriptSignature(hashType);
-            let clientSig = clientKey.sign(sigHash).toScriptSignature(hashType);
+        // Sign bet tx
+        let sigHash = tx.hashForWitnessV0(0, betScript, betAmount, hashType);
+        let hostSig = hostKey.sign(sigHash).toScriptSignature(hashType);
+        let clientSig = clientKey.sign(sigHash).toScriptSignature(hashType);
 
-            let redeemScriptSig = []; // start by pushing with true for makeBet mode
+        let redeemScriptSig = []; // start by pushing with true for makeBet mode
 
-            // host signature
-            redeemScriptSig.push(hostSig.length)
-            hostSig.forEach((item, index) => { redeemScriptSig.push(item); });
+        // host signature
+        redeemScriptSig.push(hostSig.length)
+        hostSig.forEach((item, index) => { redeemScriptSig.push(item); });
 
-            // client secret
-            redeemScriptSig.push(client.secret.length);
-            client.secret.forEach((item, index) => { redeemScriptSig.push(item); });
+        // client secret
+        redeemScriptSig.push(client.secret.length);
+        client.secret.forEach((item, index) => { redeemScriptSig.push(item); });
 
-            // Host wins with client secret mode
-            redeemScriptSig.push(0x51);
-            redeemScriptSig.push(0x51);
+        // Host wins with client secret mode
+        redeemScriptSig.push(0x51);
+        redeemScriptSig.push(0x51);
 
-            if (betScript.length > 75) redeemScriptSig.push(0x4c);
-            redeemScriptSig.push(betScript.length);
-            betScript.forEach((item, index) => { redeemScriptSig.push(item); });
-            
-            redeemScriptSig = Buffer(redeemScriptSig);
-            tx.setInputScript(0, redeemScriptSig);
-            
-            // uncomment for viewing script hex
-            // let redeemScriptSigHex = redeemScriptSig.toString('hex');
-            // let redeemScriptHex = redeemScript.toString('hex');
-            
-            let hex = tx.toHex();
-            
-            console.log("hostClaimWinSecret hex:", hex);
-            BITBOX.RawTransactions.sendRawTransaction(hex).then((result) => { 
-                console.log('hostClaimWinSecret txid:', result);
-                if (result.length < 60) // Very rough txid size check for failure
-                    reject("txid too small");
-                else {
-                    resolve(result);
-                }
-            }, (err) => { 
-                console.log(err);
-                reject(err);
-            });
-        });
+        if (betScript.length > 75) redeemScriptSig.push(0x4c);
+        redeemScriptSig.push(betScript.length);
+        betScript.forEach((item, index) => { redeemScriptSig.push(item); });
+        
+        redeemScriptSig = Buffer(redeemScriptSig);
+        tx.setInputScript(0, redeemScriptSig);
+        
+        // uncomment for viewing script hex
+        // let redeemScriptSigHex = redeemScriptSig.toString('hex');
+        // let redeemScriptHex = redeemScript.toString('hex');
+        
+        let hex = tx.toHex();
+        
+        let txId = await Core.sendRawTransaction(hex);
+        return txId;
     }
 
     static async hostClaimWinTimeout(wallet, betScript, betTxId, betAmount){
-        return new Promise( (resolve, reject) => {
+        //return new Promise( (resolve, reject) => {
 
-            let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
-            let clientKey = BITBOX.ECPair.fromWIF(client.wif)
-            let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+        let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
+        let clientKey = BITBOX.ECPair.fromWIF(client.wif)
+        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
-            let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
-            let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
-            let satoshisAfterFee = betAmount - byteCount - 800;
-            transactionBuilder.addInput(betTxId, 0, bip68.encode({ blocks: 1 }))
-            transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
+        let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
+        let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
+        let satoshisAfterFee = betAmount - byteCount - 800;
+        transactionBuilder.addInput(betTxId, 0, bip68.encode({ blocks: 1 }))
+        transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
 
-            let tx = transactionBuilder.transaction.buildIncomplete();
+        let tx = transactionBuilder.transaction.buildIncomplete();
 
-            // Sign bet tx
-            let sigHash = tx.hashForWitnessV0(0, betScript, betAmount, hashType);
-            let hostSig = hostKey.sign(sigHash).toScriptSignature(hashType);
-            let clientSig = clientKey.sign(sigHash).toScriptSignature(hashType);
+        // Sign bet tx
+        let sigHash = tx.hashForWitnessV0(0, betScript, betAmount, hashType);
+        let hostSig = hostKey.sign(sigHash).toScriptSignature(hashType);
+        let clientSig = clientKey.sign(sigHash).toScriptSignature(hashType);
 
-            let redeemScriptSig = []; // start by pushing with true for makeBet mode
+        let redeemScriptSig = []; // start by pushing with true for makeBet mode
 
-            // host signature
-            redeemScriptSig.push(hostSig.length)
-            hostSig.forEach((item, index) => { redeemScriptSig.push(item); });
+        // host signature
+        redeemScriptSig.push(hostSig.length)
+        hostSig.forEach((item, index) => { redeemScriptSig.push(item); });
 
-            // Host wins with timeout mode
-            redeemScriptSig.push(0x00);
-            redeemScriptSig.push(0x51);
+        // Host wins with timeout mode
+        redeemScriptSig.push(0x00);
+        redeemScriptSig.push(0x51);
 
-            if (betScript.length > 75) redeemScriptSig.push(0x4c);
-            redeemScriptSig.push(betScript.length);
-            betScript.forEach((item, index) => { redeemScriptSig.push(item); });
-            
-            redeemScriptSig = Buffer(redeemScriptSig);
-            tx.setInputScript(0, redeemScriptSig);
-            
-            // uncomment for viewing script hex
-            // let redeemScriptSigHex = redeemScriptSig.toString('hex');
-            // let redeemScriptHex = redeemScript.toString('hex');
-            
-            let hex = tx.toHex();
-            
-            console.log("hostClaimWinSecret hex:", hex);
-            BITBOX.RawTransactions.sendRawTransaction(hex).then((result) => { 
-                console.log('hostClaimWinSecret txid:', result);
-                if (result.length < 60) // Very rough txid size check for failure
-                    reject("txid too small");
-                else {
-                    resolve(result);
-                }
-            }, (err) => {
-                console.log(err);
-                reject(err);
-            });
-        });
+        if (betScript.length > 75) redeemScriptSig.push(0x4c);
+        redeemScriptSig.push(betScript.length);
+        betScript.forEach((item, index) => { redeemScriptSig.push(item); });
+        
+        redeemScriptSig = Buffer(redeemScriptSig);
+        tx.setInputScript(0, redeemScriptSig);
+        
+        // uncomment for viewing script hex
+        // let redeemScriptSigHex = redeemScriptSig.toString('hex');
+        // let redeemScriptHex = redeemScript.toString('hex');
+        
+        let hex = tx.toHex();
+        
+        let txId = await Core.sendRawTransaction(hex);
+        return txId;
     }
 }
