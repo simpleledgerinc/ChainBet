@@ -115,4 +115,5 @@ async function main(context) {
     }
 
     console.log("coinflip program complete.")
+    process.exit();
 }
