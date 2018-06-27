@@ -59,7 +59,7 @@ module.exports = class CoinFlipHost extends Host {
         console.log("Your secret number (shortened) is: " + this.betState.secret.readInt32LE());
 
         // Phase 1 -- Send out a bet announcement
-        console.log('\n-----------------------------------------------------------')
+        console.log('\n------------------------------------------------------------')
         console.log('| PHASE 1: Sending coin flip bet announcement...           |')
         console.log('------------------------------------------------------------')
 
@@ -74,7 +74,7 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 2 -- Wait for a bet client to accept...
-        console.log('\n-----------------------------------------------------------');
+        console.log('\n-------------------------------------------------------------');
         console.log('| PHASE 2: Waiting for someone to accept your bet...        |');
         console.log('------------------------------------------------------------');
 
@@ -107,7 +107,7 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 3 -- Send Client your Escrow Details and multisig pub key so he can create escrow
-        console.log('\n-----------------------------------------------------------');
+        console.log('\n-------------------------------------------------------------');
         console.log("| PHASE 3: Funding the host's side of the bet...            |");
         console.log('-------------------------------------------------------------');
 
@@ -124,7 +124,7 @@ module.exports = class CoinFlipHost extends Host {
 
 
         // Phase 4 -- Wait for Client's Escrow Details
-        console.log('\n-----------------------------------------------------------');
+        console.log('\n-------------------------------------------------------------');
         console.log('| PHASE 4: Waiting client to fund his side of bet...        |');
         console.log('-------------------------------------------------------------');
 
@@ -158,9 +158,9 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 5 -- Submit Bet Transaction & try to claim it.
-        console.log('\n-----------------------------------------------------------');
+        console.log('\n-------------------------------------------------------------');
         console.log('|           PHASE 5: Submitting Coin flip bet...           |');
-        console.log('-------------------------------------------------------------');
+        console.log('------------------------------------------------------------');
 
         let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(this.wallet.pubkey, 
                                                                         this.betState.secretCommitment,
@@ -188,9 +188,9 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 6 -- Wait for Client's Resignation if we lost.
-        console.log('\n-----------------------------------------------------------');
+        console.log('\n--------------------------------------------------------------');
         console.log('|          PHASE 6: Wait for Client WIN or LOSS              |');
-        console.log('-------------------------------------------------------------');
+        console.log('--------------------------------------------------------------');
 
         let p2sh_hash160 = BITBOX.Crypto.hash160(betScriptBuf);
         let scriptPubKey = BITBOX.Script.scriptHash.output.encode(p2sh_hash160);
@@ -229,7 +229,6 @@ module.exports = class CoinFlipHost extends Host {
                 this.betState.phase = 7;
             }
 
-            // 
             try {
                 var betDetails = await Core.getAddressDetailsWithRetry(betAddress);
             } catch(e) {
@@ -248,7 +247,7 @@ module.exports = class CoinFlipHost extends Host {
             await Utils.sleep(500);
         }
 
-        console.log('\n-----------------------------------------------------------');
+        console.log('\n-------------------------------------------------------------');
         console.log('|          PHASE 7: Claiming Host Winnings...               |');
         console.log('-------------------------------------------------------------');
 

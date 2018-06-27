@@ -1,16 +1,5 @@
 let EventSource = require('eventsource');
 
-// TypeError: Cannot read property 'readyState' of undefined
-// chainfeed.js:17
-//     at EventSource.<anonymous> (/Users/jamescramer/Source/chainbet/chainfeed.js:17:22)
-//     at EventSource.emit (events.js:180:13)
-//     at _emit (/Users/jamescramer/Source/chainbet/node_modules/eventsource/lib/eventsource.js:222:17)
-//     at onConnectionClosed (/Users/jamescramer/Source/chainbet/node_modules/eventsource/lib/eventsource.js:40:5)
-//     at IncomingMessage.<anonymous> (/Users/jamescramer/Source/chainbet/node_modules/eventsource/lib/eventsource.js:157:9)
-//     at IncomingMessage.emit (events.js:185:15)
-//     at endReadableNT (_stream_readable.js:1106:12)
-//     at process._tickCallback (internal/process/next_tick.js:178:19)
-
 module.exports = {
 	listen: function(onData, onConnected, onDisconnect) {
 		var source = new EventSource('https://chainfeed.org/stream')
@@ -28,7 +17,7 @@ module.exports = {
 			if (e) { //.target.readyState == EventSource.CLOSED) {
 				//console.log("Chainfeed Disconnected", e);
 				if(onDisconnect != undefined){
-						onDisconnect(e);
+					onDisconnect(e);
 				}
 			}
 			// else if (e.target.readyState == EventSource.CONNECTING) {
