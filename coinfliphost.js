@@ -47,14 +47,14 @@ module.exports = class CoinFlipHost extends Host {
             validate: 
                 function(input){ 
                     if(parseInt(input)) 
-                        if(parseInt(input) >= 1000 && parseInt(input) <= 10000) return true; 
+                        if(parseInt(input) >= 1500 && parseInt(input) <= 10000) return true; 
                     return false; 
                 }
             }]);
 
         this.betState.amount = parseInt(answer1.amount);
 
-        this.betState.secret = BITBOX.Crypto.randomBytes(32); 
+        this.betState.secret = Core.mineForSecretNumber();
         this.betState.secretCommitment = BITBOX.Crypto.hash160(this.betState.secret);
         console.log("Your secret number (shortened) is: " + this.betState.secret.readInt32LE());
 
@@ -176,9 +176,16 @@ module.exports = class CoinFlipHost extends Host {
                                                                 this.betState.participantSig2,
                                                                 escrowBuf, clientEscrowBuf, betScriptBuf, escrowTxid, 
                                                                 this.betState.clientP2SHTxId, this.betState.amount);
-
-        console.log("Bet Submitted! (txn: " + betTxId  + ")");
-        this.betState.phase = 6;
+                                                                
+        if(betTxId.length == 64){
+            console.log("Bet Submitted! (txn: " + betTxId  + ")");
+            this.betState.phase = 6;
+        }
+        else {
+            console.log("Something went wrong when submitting the bet: " + betTxId);
+            this.complete = true;
+            return;
+        }
 
         // Phase 6 -- Wait for Client's Resignation if we lost.
         console.log('\n-----------------------------------------------------------');
@@ -211,19 +218,25 @@ module.exports = class CoinFlipHost extends Host {
                 let bet = clientPhase6Messages[clientPhase6Messages.length-1];
                 this.betState.clientSecret = bet.secretValue;
 
-                let host_int_le = this.betState.secret.readDouble32LE();
-                let client_int_le = this.betState.clientSecret.readDouble32LE();
-                console.log("   " + client_int_le + " <- your secrect");
-                console.log("+  " + host_int_le + " <- client's secret");
-                console.log("===========================")
+                let host_int_le = this.betState.secret.readInt32LE();
+                let client_int_le = this.betState.clientSecret.readInt32LE();
+                console.log("\n   " + client_int_le + " <- your secrect (shortened)");
+                console.log("+  " + host_int_le + " <- client's secret (shortened)");
+                console.log("=========================================================")
                 console.log("   " + (client_int_le + host_int_le) + " <- result");
                 console.log("You WIN! (because the result is an ODD number)");
                 
                 this.betState.phase = 7;
             }
 
-            // TODO check to see if bet contract has been spent by the client
-            let betDetails = await Core.getAddressDetailsWithRetry(betAddress);
+            // 
+            try {
+                var betDetails = await Core.getAddressDetailsWithRetry(betAddress);
+            } catch(e) {
+                console.log("Client failed to claim his win or report loss...");
+                this.complete = true;
+                return;
+            }
             
             if((betDetails.balanceSat + betDetails.unconfirmedBalanceSat) <= 0 && betDetails.transactions.length == 2){
                 console.log("You Lose... (because the result is EVEN)");
@@ -271,7 +284,6 @@ module.exports = class CoinFlipHost extends Host {
     static async redeemEscrowToMakeBet(wallet, hostSecret, clientSig1, clientSig2, 
                                         hostRedeemScript, clientRedeemScript, betScript, 
                                         hostTxId, clientTxId, betAmount) {
-        //return new Promise( (resolve, reject) => {
 
         let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
         //let clientKey = BITBOX.ECPair.fromWIF(client.wif)
@@ -406,7 +418,7 @@ module.exports = class CoinFlipHost extends Host {
                 // uncomment for viewing script hex
         // console.log("Bet redeem script hex: " + redeemScriptSig.toString('hex'));
         // console.log("Bet Script Hex: " + betScript.toString('hex'));
-        console.log("Winnings ammount after fees: " + satoshisAfterFee);
+        console.log("Winning amount after fees: " + satoshisAfterFee);
 
         let hex = tx.toHex();
         

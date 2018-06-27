@@ -93,7 +93,7 @@ module.exports = class CoinFlipClient extends Client {
         // Phase 2 -- allow user to choose a secret number then send host our acceptance message
         //let answer = await inquirer.prompt([{type: "input", name: "secret", message: "Choose a secret number: "}]);
         //this.betState.secret = Utils.secret_2_buf(parseInt(answer.secret)); 
-        this.betState.secret = Buffer("936d751f4169567eb21017c8814c2aa51113ce5cdf6d4a8a379a21e084444389",'hex'); //BITBOX.Crypto.randomBytes(32); //Buffer("c667c14e218cf530c405e2d50def250b0c031f69593e95171048c772ad0e1bce",'hex');
+        this.betState.secret = Core.mineForSecretNumber(); //Buffer("c667c14e218cf530c405e2d50def250b0c031f69593e95171048c772ad0e1bce",'hex');
         this.betState.secretCommitment = BITBOX.Crypto.hash160(this.betState.secret);
         console.log("Your secret number is: " + this.betState.secret.slice(0, 4).readInt32LE());
 
@@ -179,13 +179,18 @@ module.exports = class CoinFlipClient extends Client {
 
         while(this.betState.phase == 5){
 
-            var host_p2sh_details = await Core.getAddressDetailsWithRetry(host_p2sh_Address);
+            try{
+                var host_p2sh_details = await Core.getAddressDetailsWithRetry(host_p2sh_Address, 30);
+            } catch(e){
+                console.log("Host failed to broadcast message in a timely manner.");
+                this.complete = true;
+                return;
+            }
 
-            if((host_p2sh_details.unconfirmedBalanceSat + host_p2sh_details.balanceSat) == 0 && 
-                host_p2sh_details.transactions.length == 2){
-
+            if((host_p2sh_details.unconfirmedBalanceSat + host_p2sh_details.balanceSat) == 0 && host_p2sh_details.transactions.length == 2)
+            {
                 var bet_txnId = host_p2sh_details.transactions[0];
-                //var txn_details = await BITBOX.Transaction.details(txn);
+                // TODO: Use a wrapped version of these
                 var raw_txn = await BITBOX.RawTransactions.getRawTransaction(bet_txnId);
                 var decoded_bet_txn = await BITBOX.RawTransactions.decodeRawTransaction(raw_txn);  //decoded_bet_txn.vin[0].scriptSig.asm
                 let host_secret;
@@ -201,7 +206,7 @@ module.exports = class CoinFlipClient extends Client {
 
                 console.log("  " + client_int_le + " <- your secret (shortened)");
                 console.log("+ " + host_int_le + " <- host's secret (shortened)");
-                console.log("=============================");
+                console.log("==============================================");
                 console.log("  " + (client_int_le + host_int_le + " <- result"));
             
                 let isEven = (client_int_le + host_int_le) % 2 == 0;
@@ -233,7 +238,11 @@ module.exports = class CoinFlipClient extends Client {
             
             // 6) Send resignation to the client
             let phase6TxnId = await CoinFlipClient.sendPhase6Message(this.wallet, this.betState.betId, this.betState.secret);
-            console.log("Resignation message was sent (msg txn: " + phase6TxnId + ")");
+            if(phase6TxnId.length == 64)
+                console.log("Resignation message was sent (msg txn: " + phase6TxnId + ")");
+            else {
+
+            }
         }
 
         this.complete = true;
@@ -247,8 +256,6 @@ module.exports = class CoinFlipClient extends Client {
 
     static async sendPhase2Message(wallet, betTxId, multisigPubKey, secretCommitment){
         let phase2Buf = this.encodePhase2Message(betTxId, multisigPubKey, secretCommitment);
-        // console.log("Phase 2 OP_RETURN (hex): " + phase2Buf.toString('hex'));
-        // console.log("Phase 2 OP_RETURN (ASM): " + BITBOX.Script.toASM(phase2Buf));
         wallet.utxo = await Core.getUtxoWithRetry(wallet.address);
         let txnId = await Core.createOP_RETURN(wallet, phase2Buf);
         return txnId;
@@ -256,8 +263,6 @@ module.exports = class CoinFlipClient extends Client {
 
     static async sendPhase4Message(wallet, betTxId, escrowTxid, bobEscrowSig, aliceEscrowSig){
         let phase4Buf = this.encodePhase4(betTxId, escrowTxid, bobEscrowSig, aliceEscrowSig);
-        // console.log("Phase 4 OP_RETURN (hex): " + phase4Buf.toString('hex'));
-        // console.log("Phase 4 OP_RETURN (ASM): " + BITBOX.Script.toASM(phase4Buf));
         wallet.utxo = await Core.getUtxoWithRetry(wallet.address);
         let txnId = await Core.createOP_RETURN(wallet, phase4Buf);
         return txnId;
@@ -265,10 +270,6 @@ module.exports = class CoinFlipClient extends Client {
 
     static async sendPhase6Message(wallet, betTxId, clientSecret){
         let phase6Buf = this.encodePhase6(betTxId, clientSecret);
-
-        // console.log("Phase 4 OP_RETURN (hex): " + phase4Buf.toString('hex'));
-        // console.log("Phase 4 OP_RETURN (ASM): " + BITBOX.Script.toASM(phase4Buf));
-
         wallet.utxo = await Core.getUtxoWithRetry(wallet.address);
         let txnId = await Core.createOP_RETURN(wallet, phase6Buf);
         return txnId;
@@ -320,7 +321,7 @@ module.exports = class CoinFlipClient extends Client {
         // uncomment for viewing script hex
         // console.log("Bet redeem script hex: " + redeemScriptSig.toString('hex'));
         // console.log("Bet Script Hex: " + betScript.toString('hex'));
-        console.log("Winnings ammount after fees: " + satoshisAfterFee);
+        console.log("Winning amount after fees: " + satoshisAfterFee);
 
         let hex = tx.toHex();
         

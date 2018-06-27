@@ -5,8 +5,18 @@ let Utils = require('./utils')
 
 module.exports = class Core {
 	
-	static async sendRawTransaction(hex, retries=10) {
-		var result = undefined;
+	static mineForSecretNumber(){
+		var secret = BITBOX.Crypto.randomBytes(32);
+
+		while(!(secret.readInt32LE() <= 1073741824 && secret.readInt32LE() >= -1073741824)){
+			secret = BITBOX.Crypto.randomBytes(32);
+		}
+
+		return secret;
+	}
+
+	static async sendRawTransaction(hex, retries=20) {
+		var result;
 
 		var i = 0;
 
@@ -24,8 +34,8 @@ module.exports = class Core {
 		return result;
 	}
 
-	static async getAddressDetailsWithRetry(address, retries=10){
-		var result = undefined;
+	static async getAddressDetailsWithRetry(address, retries=20){
+		var result;
 		var count = 0;
 
 		while(result == undefined){
@@ -33,14 +43,15 @@ module.exports = class Core {
 			count++;
 			if(count > retries)
 				throw new Error("BITBOX.Address.details endpoint experienced a problem");
+
 			await Utils.sleep(1000);
 		}
 
 		return result;
 	}
 
-	static async getUtxoWithRetry(address, retries=10){
-		var result = undefined;
+	static async getUtxoWithRetry(address, retries=20){
+		var result;
 		var count = 0;
 
 		while(result == undefined){
