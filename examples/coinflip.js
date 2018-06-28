@@ -37,7 +37,7 @@ if(!coinflip.debug) {
          else 
             throw new Error("The input value is not either 1 or 2.");
         
-        console.log("Your address is: " + wallet.address);
+        console.log("\nYour address is: " + wallet.address);
         
         if(coinflip.wif == undefined)
             coinflip.wif = wallet.wif;
@@ -105,7 +105,7 @@ async function debug(context){
     else if(context.role == "2")
         wallet = jsonfile.readFileSync('./examples/wallet.json')[1];
 
-    console.log("Your address is: " + wallet.address);
+    console.log("\nYour address is: " + wallet.address);
     context.wif = wallet.wif
     context.pubkey = Buffer(wallet.pubkeyHex, 'hex')
     context.address = wallet.address

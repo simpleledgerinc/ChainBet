@@ -40,10 +40,10 @@ module.exports = class CoinFlipClient extends Client {
         } 
 
         // Phase 1 -- keep checking for a host to bet with
-        console.log('\n---------------------------------------------------')
-        console.log('| PHASE 1: Waiting for a host bet announcement... |');
-        console.log('---------------------------------------------------')
-
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log('|                PHASE 1: Waiting for a host bet announcement...                |');
+        console.log('---------------------------------------------------------------------------------');
+        
         while(this.betState.phase == 1) {
 
             var hostPhase1Messages = this.feed.messages.filter(function(item){ 
@@ -59,7 +59,7 @@ module.exports = class CoinFlipClient extends Client {
                 this.betState.amount = newBet.amount;
 
                 // NOTE: to simplify we will automatically accept the first bet host we see
-                console.log("Coin flip bet discovered! (msg txn: " + this.betState.betId + ")");
+                console.log("\nCoin flip bet discovered! \n(msg txn: " + this.betState.betId + ")");
                 console.log("Bet amount: " + newBet.amount);
 
                 if(!this.isDebugging) {
@@ -97,18 +97,19 @@ module.exports = class CoinFlipClient extends Client {
         this.betState.secretCommitment = BITBOX.Crypto.hash160(this.betState.secret);
         console.log("Your secret number is: " + Core.readScriptInt32(this.betState.secret));
 
-        console.log('\n--------------------------------------------------------------')
-        console.log("| PHASE 2: Accepting bet & sending our secret commitment...  |");
-        console.log('---------------------------------------------------------------')
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log('|            PHASE 2: Accepting bet & sending our secret commitment...          |');
+        console.log('---------------------------------------------------------------------------------');
 
         this.betState.clientTxId = await CoinFlipClient.sendPhase2Message(this.wallet, this.betState.betId, this.wallet.pubkey, this.betState.secretCommitment);
-        console.log("Msg to accept the Host's bet sent (msg txn: " + this.betState.clientTxId + ")")
+        console.log("\nMessage to accept the bet sent. \n(msg txn: " + this.betState.clientTxId + ")")
         this.betState.phase = 3;
 
         // Phase 3 -- keep checking for host to fund his side of bet...
-        console.log('\n---------------------------------------------------------------')
-        console.log("| PHASE 3: Waiting for host confirmation & to fund his bet... |");
-        console.log('---------------------------------------------------------------')
+        console.log('\n---------------------------------------------------------------------------------')
+        console.log('|          PHASE 3: Waiting for host confirmation & to fund his bet...          |')
+        console.log('---------------------------------------------------------------------------------')
+        
 
         while(this.betState.phase == 3) {
 
@@ -131,8 +132,8 @@ module.exports = class CoinFlipClient extends Client {
                 this.betState.hostP2SHTxId = bet.hostP2SHTxId.toString('hex');
 
                 // NOTE: to simplify we will automatically accept the first bet host we see
-                console.log("The bet host has decided to bet with you! :-) (msg txn: " + bet.op_return_txnId + ")");
-                console.log("The host's escrow txn: " + this.betState.hostP2SHTxId);
+                console.log("\nThe bet host has decided to bet with you! :-) \n(msg txn: " + bet.op_return_txnId + ")");
+                console.log("(escrow txn: " + this.betState.hostP2SHTxId);
 
                 this.betState.phase = 4;
             }
@@ -140,18 +141,18 @@ module.exports = class CoinFlipClient extends Client {
         }
 
         // Phase 4 -- Send Host your Escrow Details
-        console.log('\n----------------------------------------------------------------')
-        console.log("|     PHASE 4: Funding our side of the bet...                  |");
-        console.log('----------------------------------------------------------------')
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log('|                   PHASE 4: Funding our side of the bet...                     |');
+        console.log('---------------------------------------------------------------------------------');
 
         let escrowBuf = CoinFlipShared.buildCoinFlipClientEscrowScript(this.betState.hostMultisigPubKey, this.wallet.pubkey);
         //console.log(BITBOX.Script.toASM(escrowBuf));
         this.wallet.utxo = await Core.getUtxoWithRetry(this.wallet.address);
         let escrowTxid = await Core.createEscrow(this.wallet, escrowBuf, this.betState.amount);
-        console.log('Our Escrow Txn: ' + escrowTxid);
+        console.log('\nOur escrow address has been funded! \n(txn: ' + escrowTxid);
         await Utils.sleep(3000); // need to wait for BITBOX mempool to sync
 
-        console.log('Sending client phase 4 message with our escrow details and 2 escrow signatures...');
+        console.log('Sending our escrow details and signatures to host...');
         let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(this.betState.hostMultisigPubKey, this.betState.hostCommitment, this.wallet.pubkey, this.betState.secretCommitment);
         
         // build bob's signatures
@@ -164,12 +165,13 @@ module.exports = class CoinFlipClient extends Client {
 
         // prepare to send Phase 4 OP_RETURN
         let phase4MsgTxId = await CoinFlipClient.sendPhase4Message(this.wallet, this.betState.betId, escrowTxid, bobEscrowSig, aliceEscrowSig);
-        console.log('Phase 4 message sent (msg txn: ' + phase4MsgTxId +')');
+        console.log('Message sent. \n(msg txn: ' + phase4MsgTxId +')');
         this.betState.phase = 5;
 
-        console.log('\n----------------------------------------------------------------')
-        console.log("|     PHASE 5: Waiting for host to broadcast coin flip...       |");
-        console.log('-----------------------------------------------------------------')
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log('|              PHASE 5: Waiting for host to broadcast coin flip...              |');
+        console.log('---------------------------------------------------------------------------------');
+        
         // 5) keep check to see if the host's P2SH escrow has been spent (indicates bet is created).
 
         // Determine host's P2SH address
@@ -182,7 +184,7 @@ module.exports = class CoinFlipClient extends Client {
             try{
                 var host_p2sh_details = await Core.getAddressDetailsWithRetry(host_p2sh_Address, 30);
             } catch(e){
-                console.log("Host failed to broadcast message in a timely manner.");
+                console.log("\nHost failed to broadcast message in a timely manner.");
                 this.complete = true;
                 return;
             }
@@ -204,7 +206,7 @@ module.exports = class CoinFlipClient extends Client {
                 let client_int_le = Core.readScriptInt32(this.betState.secret);
                 let host_int_le = Core.readScriptInt32(host_secret);
 
-                console.log("  " + client_int_le + " <- your secret (shortened)");
+                console.log("\n  " + client_int_le + " <- your secret (shortened)");
                 console.log("+ " + host_int_le + " <- host's secret (shortened)");
                 console.log("==============================================");
                 console.log("  " + (client_int_le + host_int_le + " <- result"));
@@ -212,18 +214,18 @@ module.exports = class CoinFlipClient extends Client {
                 let isEven = (client_int_le + host_int_le) % 2 == 0;
 
                 if(isEven) {
-                    console.log("You win! (because the result is EVEN)");
+                    console.log("\nYou win! (because the result is EVEN)");
                     let winTxnId = await CoinFlipClient.clientClaimWin(this.wallet, host_secret, this.betState.secret, betScriptBuf, bet_txnId, this.betState.amount);
                     if(winTxnId.length != 64)
                     {
                         console.log("We're sorry. Something terrible went wrong when trying to claim your winnings... " + winTxnId);
                     } else {
-                        console.log("You've been paid! (txn: " + winTxnId + ")");
+                        console.log("You've been paid! \n(txn: " + winTxnId + ")");
                     }
                     this.complete = true;
                     return
                 }
-                console.log("You Lose... (becuase the result is ODD)");
+                console.log("\nYou Lose... (becuase the result is ODD)");
                 this.betState.phase = 6;
             }
             
@@ -232,14 +234,14 @@ module.exports = class CoinFlipClient extends Client {
 
         if(this.betState.phase == 6) {
 
-            console.log('\n---------------------------------------------------------------')
-            console.log("|      PHASE 6: Sending resignation message to host...        |");
-            console.log('---------------------------------------------------------------')
+            console.log('\n---------------------------------------------------------------------------------');
+            console.log('|                     PHASE 6: Sending resignation to Host...                   |');
+            console.log('---------------------------------------------------------------------------------');
             
             // 6) Send resignation to the client
             let phase6TxnId = await CoinFlipClient.sendPhase6Message(this.wallet, this.betState.betId, this.betState.secret);
             if(phase6TxnId.length == 64)
-                console.log("Resignation message was sent (msg txn: " + phase6TxnId + ")");
+                console.log("Resignation message sent. \n(msg txn: " + phase6TxnId + ")");
             else {
 
             }

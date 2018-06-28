@@ -59,13 +59,13 @@ module.exports = class CoinFlipHost extends Host {
         console.log("Your secret number (shortened) is: " + Core.readScriptInt32(this.betState.secret));
 
         // Phase 1 -- Send out a bet announcement
-        console.log('\n------------------------------------------------------------')
-        console.log('| PHASE 1: Sending coin flip bet announcement...           |')
-        console.log('------------------------------------------------------------')
-
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log('|               PHASE 1: Sending coin flip bet announcement...                  |');
+        console.log('---------------------------------------------------------------------------------')
+        
         this.betState.betId = await CoinFlipHost.sendPhase1Message(this.wallet, this.betState.amount, this.betState.secretCommitment);
         if(this.betState.betId.length == 64){
-            console.log('Coinflip announcement sent. (msg txn: ' + this.betState.betId + ')');
+            console.log('\nCoinflip announcement sent. \n(msg txn: ' + this.betState.betId + ')');
             this.betState.phase = 2;
         } else {
             console.log("An error occured: " + this.betState.betId);
@@ -74,9 +74,9 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 2 -- Wait for a bet client to accept...
-        console.log('\n-------------------------------------------------------------');
-        console.log('| PHASE 2: Waiting for someone to accept your bet...        |');
-        console.log('------------------------------------------------------------');
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log('|             PHASE 2: Waiting for someone to accept your bet...                |');
+        console.log('---------------------------------------------------------------------------------');
 
         while(this.betState.phase == 2){
 
@@ -98,7 +98,7 @@ module.exports = class CoinFlipHost extends Host {
                 this.betState.clientCommitment = bet.secretCommitment;
                 
                 // NOTE: to simplify we will automatically accept the first bet host we see
-                console.log("Someone has accepted your bet!! (msg txn: " + bet.op_return_txnId + ")");
+                console.log("\nSomeone has accepted your bet! \n(msg txn: " + bet.op_return_txnId + ")");
                 //console.log("Client txn Id: " + this.betState.clientTxId);
 
                 this.betState.phase = 3;
@@ -107,26 +107,24 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 3 -- Send Client your Escrow Details and multisig pub key so he can create escrow
-        console.log('\n-------------------------------------------------------------');
-        console.log("| PHASE 3: Funding the host's side of the bet...            |");
-        console.log('-------------------------------------------------------------');
-
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log("|               PHASE 3: Funding the host's side of the bet...                  |");
+        console.log('---------------------------------------------------------------------------------');
+        
         let escrowBuf = CoinFlipShared.buildCoinFlipHostEscrowScript(this.wallet.pubkey, this.betState.secretCommitment, this.betState.clientmultisigPubKey);
         this.wallet.utxo = await Core.getUtxoWithRetry(this.wallet.address);
         let escrowTxid = await Core.createEscrow(this.wallet, escrowBuf, this.betState.amount);
-        console.log('Our Escrow Txn: ' + escrowTxid);
+        console.log('\nOur escrow address has been funded! \n(txn: ' + escrowTxid);
         await Utils.sleep(2000); // short wait for BITBOX mempool to sync
 
-        console.log('Sending client phase 3 message with our escrow details and multisigpub key...');
         let phase3MsgTxId = await CoinFlipHost.sendPhase3Message(this.wallet, this.betState.betId, this.betState.clientTxId, escrowTxid);
-        console.log('Phase 3 message sent (msg txn: ' + phase3MsgTxId + ')');
+        console.log('Message sent to client with our escrow details. \n(msg txn: ' + phase3MsgTxId + ')');
         this.betState.phase = 4;
 
-
         // Phase 4 -- Wait for Client's Escrow Details
-        console.log('\n-------------------------------------------------------------');
-        console.log('| PHASE 4: Waiting client to fund his side of bet...        |');
-        console.log('-------------------------------------------------------------');
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log('|           PHASE 4: Waiting for client to fund their side of bet...            |')
+        console.log('---------------------------------------------------------------------------------');
 
         while(this.betState.phase == 4){
 
@@ -149,8 +147,8 @@ module.exports = class CoinFlipHost extends Host {
                 this.betState.participantSig1 = Utils.unpadSig(bet.participantSig1);
                 this.betState.participantSig2 = Utils.unpadSig(bet.participantSig2);
 
-                console.log("The client has funded the bet! (msg txn: " + bet.op_return_txnId + ")");
-                console.log("Client escrow (txn: " + this.betState.clientP2SHTxId + ")");
+                console.log("\nThe client has funded the bet! \n(msg txn: " + bet.op_return_txnId + ")");
+                console.log("(escrow txn: " + this.betState.clientP2SHTxId + ")");
 
                 this.betState.phase = 5;
             }
@@ -158,9 +156,9 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 5 -- Submit Bet Transaction & try to claim it.
-        console.log('\n-------------------------------------------------------------');
-        console.log('|           PHASE 5: Submitting Coin flip bet...           |');
-        console.log('------------------------------------------------------------');
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log('|                    PHASE 5: Submitting Coin flip bet...                       |');
+        console.log('---------------------------------------------------------------------------------');        
 
         let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(this.wallet.pubkey, 
                                                                         this.betState.secretCommitment,
@@ -178,20 +176,20 @@ module.exports = class CoinFlipHost extends Host {
                                                                 this.betState.clientP2SHTxId, this.betState.amount);
                                                                 
         if(betTxId.length == 64){
-            console.log("Bet Submitted! (txn: " + betTxId  + ")");
+            console.log("\nBet Submitted! \n(txn: " + betTxId  + ")");
             this.betState.phase = 6;
         }
         else {
-            console.log("Something went wrong when submitting the bet: " + betTxId);
+            console.log("\nSomething went wrong when submitting the bet: " + betTxId);
             this.complete = true;
             return;
         }
 
         // Phase 6 -- Wait for Client's Resignation if we lost.
-        console.log('\n--------------------------------------------------------------');
-        console.log('|          PHASE 6: Wait for Client WIN or LOSS              |');
-        console.log('--------------------------------------------------------------');
-
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log('|                   PHASE 6: Wait for Client WIN or LOSS                        |');
+        console.log('---------------------------------------------------------------------------------');
+        
         let p2sh_hash160 = BITBOX.Crypto.hash160(betScriptBuf);
         let scriptPubKey = BITBOX.Script.scriptHash.output.encode(p2sh_hash160);
         let betAddress = BITBOX.Address.fromOutputScript(scriptPubKey);
@@ -224,7 +222,7 @@ module.exports = class CoinFlipHost extends Host {
                 console.log("+  " + host_int_le + " <- client's secret (shortened)");
                 console.log("=========================================================")
                 console.log("   " + (client_int_le + host_int_le) + " <- result");
-                console.log("You WIN! (because the result is an ODD number)");
+                console.log("\nYou WIN! (because the result is an ODD number)");
                 
                 this.betState.phase = 7;
             }
@@ -232,13 +230,13 @@ module.exports = class CoinFlipHost extends Host {
             try {
                 var betDetails = await Core.getAddressDetailsWithRetry(betAddress);
             } catch(e) {
-                console.log("Client failed to claim his win or report loss...");
+                console.log("\nClient failed to claim his win or report loss...");
                 this.complete = true;
                 return;
             }
             
             if((betDetails.balanceSat + betDetails.unconfirmedBalanceSat) <= 0 && betDetails.transactions.length == 2){
-                console.log("You Lose... (because the result is EVEN)");
+                console.log("\nYou Lose... (because the result is EVEN)");
                 console.log("The client has claimed their winnings...");
                 this.complete = true;
                 return;
@@ -247,16 +245,17 @@ module.exports = class CoinFlipHost extends Host {
             await Utils.sleep(500);
         }
 
-        console.log('\n-------------------------------------------------------------');
-        console.log('|          PHASE 7: Claiming Host Winnings...               |');
-        console.log('-------------------------------------------------------------');
+        console.log('\n---------------------------------------------------------------------------------');
+        console.log('|                       PHASE 7: Claiming Our Winnings                          |');
+        console.log('---------------------------------------------------------------------------------');
+        
 
         let winTxnId = await CoinFlipHost.hostClaimWinSecret(this.wallet, this.betState.clientSecret, betScriptBuf, betTxId, this.betState.amount);
         if(winTxnId.length != 64)
         {
-            console.log("We're sorry. Something terrible went wrong when trying to claim your winnings... " + winTxnId);
+            console.log("\nWe're sorry. Something terrible went wrong when trying to claim your winnings... " + winTxnId);
         } else {
-            console.log("You've been paid! (txn: " + winTxnId + ")");
+            console.log("\nYou've been paid! \n(txn: " + winTxnId + ")");
         }
         
         this.complete = true;
