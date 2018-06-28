@@ -220,7 +220,7 @@ module.exports = class CoinFlipClient extends Client {
                     {
                         console.log("We're sorry. Something terrible went wrong when trying to claim your winnings... " + winTxnId);
                     } else {
-                        console.log("You've been paid! \n(txn: " + winTxnId + ")");
+                        console.log("\nYou've been paid! \n(txn: " + winTxnId + ")");
                     }
                     this.complete = true;
                     return

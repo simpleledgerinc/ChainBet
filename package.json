@@ -1,7 +1,7 @@
 {
   "name": "chainbet",
-  "version": "0.0.10",
-  "description": "Utility methods for reading/writing to the BCH blockchain per the ChainBet protocol",
+  "version": "0.0.11",
+  "description": "Methods and examples of the ChainBet protocol",
   "main": "chainbet.js",
   "scripts": {
     "test": "nyc mocha --require babel-core/register"
