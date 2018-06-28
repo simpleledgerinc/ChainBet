@@ -18,6 +18,7 @@ coinflip.cli = true;
 
 if(!coinflip.debug) {
     inquirer.prompt(function() { // 1) Ask the user to specify role (Host or Client)
+        console.log('\n');
         var questions = [];
         if(true)
             questions.push({ type: "input", 
@@ -80,7 +81,7 @@ async function main(context) {
         await chainbet.Utils.sleep(500);
     }
 
-    console.log("coinflip program complete.")
+    console.log("\ncoinflip program complete.")
     process.exit();
 }
 

@@ -60,8 +60,8 @@ module.exports = class CoinFlipClient extends Client {
 
                 // NOTE: to simplify we will automatically accept the first bet host we see
                 console.log("\nCoin flip bet discovered! \n(msg txn: " + this.betState.betId + ")");
-                console.log("Bet amount: " + newBet.amount);
-
+                console.log("\nHost's Bet Amount: " + newBet.amount);
+                console.log('\n');
                 if(!this.isDebugging) {
                     let answer = await inquirer.prompt([{
                         type: "input", 
@@ -241,7 +241,7 @@ module.exports = class CoinFlipClient extends Client {
             // 6) Send resignation to the client
             let phase6TxnId = await CoinFlipClient.sendPhase6Message(this.wallet, this.betState.betId, this.betState.secret);
             if(phase6TxnId.length == 64)
-                console.log("Resignation message sent. \n(msg txn: " + phase6TxnId + ")");
+                console.log("\nResignation message sent. \n(msg txn: " + phase6TxnId + ")");
             else {
 
             }

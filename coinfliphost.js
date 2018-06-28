@@ -40,6 +40,7 @@ module.exports = class CoinFlipHost extends Host {
         } 
 
         // Phase 0) Prompt user for bet amount & secret commitment to initiate bet.
+        console.log('\n');
         let answer1 = await inquirer.prompt([{
             type: "input", 
             name: "amount", 
@@ -218,8 +219,8 @@ module.exports = class CoinFlipHost extends Host {
 
                 let host_int_le = Core.readScriptInt32(this.betState.secret);
                 let client_int_le = Core.readScriptInt32(this.betState.clientSecret);
-                console.log("\n   " + client_int_le + " <- your secrect (shortened)");
-                console.log("+  " + host_int_le + " <- client's secret (shortened)");
+                console.log("\n   " + client_int_le + " <- client secrect (shortened)");
+                console.log("+  " + host_int_le + " <- your secret (shortened)");
                 console.log("=========================================================")
                 console.log("   " + (client_int_le + host_int_le) + " <- result");
                 console.log("\nYou WIN! (because the result is an ODD number)");
