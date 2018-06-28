@@ -14,6 +14,59 @@ var script_phase4;
 var script_phase6;
 
 describe('#chainbet', () => {
+
+	describe('#checkScriptNumberHandling', () => {
+		fixtures.chainbet.encodePhase2.forEach((fixture) => {
+			it(`check proper handling of Script 32-bit signed integers`, () => {
+
+				assert.equal(chainbet.Core.readScriptInt32(Buffer('ffffff7f', 'hex')), 2147483647);
+				assert.equal(chainbet.Core.readScriptInt32(Buffer('ffffffff', 'hex')), -2147483647);
+				assert.equal(chainbet.Core.readScriptInt32(Buffer('ffffff8f', 'hex')), -268435455);
+				assert.equal(chainbet.Core.readScriptInt32(Buffer('ffffff3f', 'hex')), 1073741823);
+				assert.equal(chainbet.Core.readScriptInt32(Buffer('ffffffbf', 'hex')), -1073741823);
+				assert.equal(chainbet.Core.readScriptInt32(Buffer('00000000', 'hex')), 0);
+				assert.equal(chainbet.Core.readScriptInt32(Buffer('00000080', 'hex')), 0);
+				assert.equal(chainbet.Core.readScriptInt32(Buffer('01000000', 'hex')), 1);
+				assert.equal(chainbet.Core.readScriptInt32(Buffer('01000080', 'hex')), -1);
+
+			});
+		});
+	});
+
+	describe('#checkSecretNumbers', () => {
+		fixtures.chainbet.encodePhase2.forEach((fixture) => {
+			it(`check validity of secret numbers`, () => {
+
+				var secret = Buffer('ffffff7f', 'hex');
+				assert.equal(chainbet.Core.secretIsValid(secret), false);
+
+				var secret = Buffer('ffffffff', 'hex');
+				assert.equal(chainbet.Core.secretIsValid(secret), false);
+
+				var secret = Buffer('ffffff3f', 'hex');
+				assert.equal(chainbet.Core.secretIsValid(secret), true);
+
+				var secret = Buffer('ffffff8f', 'hex');
+				assert.equal(chainbet.Core.secretIsValid(secret), true);
+
+				var secret = Buffer('ffffffbf', 'hex');
+				assert.equal(chainbet.Core.secretIsValid(secret), true);
+
+				var secret = Buffer('00000000', 'hex');
+				assert.equal(chainbet.Core.secretIsValid(secret), true);
+
+				var secret = Buffer('00000080', 'hex');
+				assert.equal(chainbet.Core.secretIsValid(secret), true);
+
+				var secret = Buffer('01000000', 'hex');
+				assert.equal(chainbet.Core.secretIsValid(secret), true);
+
+				var secret = Buffer('01000080', 'hex');
+				assert.equal(chainbet.Core.secretIsValid(secret), true);
+			});
+		});
+	});
+
 	describe('#encodePhase1', () => {
 		fixtures.chainbet.encodePhase1.forEach((fixture) => {
 			it(`should encodePhase1`, () => {

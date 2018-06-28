@@ -56,7 +56,7 @@ module.exports = class CoinFlipHost extends Host {
 
         this.betState.secret = Core.mineForSecretNumber();
         this.betState.secretCommitment = BITBOX.Crypto.hash160(this.betState.secret);
-        console.log("Your secret number (shortened) is: " + this.betState.secret.readInt32LE());
+        console.log("Your secret number (shortened) is: " + Core.readScriptInt32(this.betState.secret));
 
         // Phase 1 -- Send out a bet announcement
         console.log('\n------------------------------------------------------------')
@@ -218,8 +218,8 @@ module.exports = class CoinFlipHost extends Host {
                 let bet = clientPhase6Messages[clientPhase6Messages.length-1];
                 this.betState.clientSecret = bet.secretValue;
 
-                let host_int_le = this.betState.secret.readInt32LE();
-                let client_int_le = this.betState.clientSecret.readInt32LE();
+                let host_int_le = Core.readScriptInt32(this.betState.secret);
+                let client_int_le = Core.readScriptInt32(this.betState.clientSecret);
                 console.log("\n   " + client_int_le + " <- your secrect (shortened)");
                 console.log("+  " + host_int_le + " <- client's secret (shortened)");
                 console.log("=========================================================")

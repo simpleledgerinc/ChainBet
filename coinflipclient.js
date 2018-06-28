@@ -95,7 +95,7 @@ module.exports = class CoinFlipClient extends Client {
         //this.betState.secret = Utils.secret_2_buf(parseInt(answer.secret)); 
         this.betState.secret = Core.mineForSecretNumber(); //Buffer("c667c14e218cf530c405e2d50def250b0c031f69593e95171048c772ad0e1bce",'hex');
         this.betState.secretCommitment = BITBOX.Crypto.hash160(this.betState.secret);
-        console.log("Your secret number is: " + this.betState.secret.slice(0, 4).readInt32LE());
+        console.log("Your secret number is: " + Core.readScriptInt32(this.betState.secret));
 
         console.log('\n--------------------------------------------------------------')
         console.log("| PHASE 2: Accepting bet & sending our secret commitment...  |");
@@ -201,8 +201,8 @@ module.exports = class CoinFlipClient extends Client {
                     //throw new Error("Raw bet transaction could not be decoded.");
 
                 // must remove right hand zeros so that the numbers aren't always even..
-                let client_int_le = this.betState.secret.readInt32LE();
-                let host_int_le = host_secret.readInt32LE();
+                let client_int_le = Core.readScriptInt32(this.betState.secret);
+                let host_int_le = Core.readScriptInt32(host_secret);
 
                 console.log("  " + client_int_le + " <- your secret (shortened)");
                 console.log("+ " + host_int_le + " <- host's secret (shortened)");

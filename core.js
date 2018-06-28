@@ -5,13 +5,29 @@ let Utils = require('./utils')
 
 module.exports = class Core {
 	
+	// Method to get Script 32-bit integer (little-endian signed magnitude representation)
+	static readScriptInt32(buffer){
+		var number;
+		if(buffer.readUInt32LE() > 2147483647)
+			number = -1 * (buffer.readUInt32LE() - 2147483648);
+		else
+			number = buffer.readUInt32LE();
+		return number; 
+	}
+
+	// Method to check whether or not a secret value is valid
+	static secretIsValid(buffer){
+		var number = this.readScriptInt32(buffer);
+		if(number > 1073741823 || number < -1073741823)
+			return false;
+		return true;
+	}
+
 	static mineForSecretNumber(){
 		var secret = BITBOX.Crypto.randomBytes(32);
-
-		while(!(secret.readInt32LE() <= 1073741824 && secret.readInt32LE() >= -1073741824)){
+		while(!this.secretIsValid(secret)){
 			secret = BITBOX.Crypto.randomBytes(32);
 		}
-
 		return secret;
 	}
 
