@@ -45,13 +45,17 @@ module.exports = class MessageFeed {
 
                 if (!tx.data || !tx.data[0].buf || !tx.data[0].buf.data) return
                 let protocol = Buffer.from(tx.data[0].buf.data).toString('hex').toLowerCase()
-                if (protocol == '00424554') {
+                if (protocol == '00424554' || protocol == '424554') {
 
                     let chainbetBuf = Buffer(tx.data[1].buf.data);
 
-                    //console.log('[MessageFeed] ChainBet Data: ' + chainbetBuf.toString('hex'));
+                    var fields = [];
+                    tx.data.forEach((item, index) => { 
+                        if(index > 0)
+                            fields.push(Buffer(item.buf.data));
+                    });
 
-                    let decodedBet = core.decodePhaseData(chainbetBuf);
+                    let decodedBet = core.decodePhaseData(fields);
 
                     decodedBet.op_return_txnId = tx.tx.hash
                     //console.log('[MessageFeed] Txn id: ' + tx.tx.hash);

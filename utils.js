@@ -6,11 +6,15 @@ let base58 = require('bs58');
 
 module.exports = class Utils {
 
-	// static removeRightZeros(hexString){
-	// 	while(hexString[hexString.length-1]=='0')
-	// 	{
-	// 		hexStrign
-	// 	}
+	// static encodeVersionPhaseType(type){
+	// 	if(type == 0x01)
+	// 		return BITBOX.Script.opcodes.OP_1;
+	// 	else
+	// 		throw new Error("Type provided is not a valid type.");
+	// }
+
+	// static decodeVersionPhaseType(code){
+
 	// }
 
 	static padSig(sig){

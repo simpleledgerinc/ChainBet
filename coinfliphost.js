@@ -259,7 +259,7 @@ module.exports = class CoinFlipHost extends Host {
     }
 
 	static async sendPhase1Message(wallet, betAmount, hostCommitment, clientTargetAddress){
-        let phase1Buf = this.encodePhase1Message(0x01, betAmount, hostCommitment, clientTargetAddress);
+        let phase1Buf = this.encodePhase1Message(betAmount, hostCommitment, clientTargetAddress);
         // console.log("Phase 1 OP_RETURN (hex): " + phase1Buf.toString('hex'));
         // console.log("Phase 1 OP_RETURN (ASM): " + BITBOX.Script.toASM(phase1Buf));
         wallet.utxo = await Core.getUtxoWithRetry(wallet.address);

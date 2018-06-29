@@ -74,22 +74,21 @@ describe('#chainbet', () => {
 				var hostCommitment = Buffer('1111111111111111111111111111111111111111', 'hex');
 
 				// Phase 1 with optional target address
-				let script_buf = chainbet.Host.encodePhase1Message(0x01, 1000, hostCommitment, 'bitcoincash:qzs02v05l7qs5s24srqju498qu55dwuj0cx5ehjm2c');
-				
+				let script_buf = chainbet.Host.encodePhase1Message(1000, hostCommitment, 'bitcoincash:qzs02v05l7qs5s24srqju498qu55dwuj0cx5ehjm2c');
+				assert.equal(script_buf.length <= 220, true);
+
 				script_phase1 = script_buf.toString('hex');
 
-				let asm_phase1 = BITBOX.Script.toASM(script_buf)
-				assert.equal(asm_phase1, 'OP_RETURN 00424554 01010100000000000003e8' + 
-										'1111111111111111111111111111111111111111' +
-										'a0f531f4ff810a415580c12e54a7072946bb927e');
+				let asm_phase1 = BITBOX.Script.toASM(script_buf);
+				assert.equal(asm_phase1, 'OP_RETURN 00424554 010101 00000000000003e8 1111111111111111111111111111111111111111 a0f531f4ff810a415580c12e54a7072946bb927e');
 
 				// Phase 1 with no target address
-				let script_buf_noAddr = chainbet.Host.encodePhase1Message(0x01, 1000, hostCommitment);
+				let script_buf_noAddr = chainbet.Host.encodePhase1Message(1000, hostCommitment);
 
 				script_phase1_noAddr = script_buf.toString('hex');
 
 				let asm_phase1_noAddr = BITBOX.Script.toASM(script_buf_noAddr);
-				assert.equal(asm_phase1_noAddr, 'OP_RETURN 00424554 01010100000000000003e81111111111111111111111111111111111111111');
+				assert.equal(asm_phase1_noAddr, 'OP_RETURN 00424554 010101 00000000000003e8 1111111111111111111111111111111111111111');
 			});
 		});
 	});
@@ -98,17 +97,16 @@ describe('#chainbet', () => {
 		fixtures.chainbet.encodePhase2.forEach((fixture) => {
 			it(`should encodePhase2`, () => {
 				let betTxId = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b'
-				let multiSigPubKey = '000000000000000000000000000000000000000000000000000000000000000000';
-				let secretCommitment = '1111111111111111111111111111111111111111';
+				let multiSigPubKey = Buffer('000000000000000000000000000000000000000000000000000000000000000000', 'hex');
+				let secretCommitment = Buffer('1111111111111111111111111111111111111111','hex');
 				
 				let script_buf = chainbet.Client.encodePhase2Message(betTxId, multiSigPubKey, secretCommitment)
+				assert.equal(script_buf.length <= 220, true);
 
 				script_phase2 = script_buf.toString('hex');
 
 				let asm_phase2 = BITBOX.Script.toASM(script_buf)
-				assert.equal(asm_phase2, 'OP_RETURN 00424554 01024a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b' + 
-											'000000000000000000000000000000000000000000000000000000000000000000' + 
-											'1111111111111111111111111111111111111111');
+				assert.equal(asm_phase2, 'OP_RETURN 00424554 0102 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 000000000000000000000000000000000000000000000000000000000000000000 1111111111111111111111111111111111111111');
 			});
 		});
 	});
@@ -121,15 +119,12 @@ describe('#chainbet', () => {
 				let hostP2SHTxId = '999e1c837c76a1b7fbb7e57baf87b309960f5ffefbf2a9b95dd890602272f644'
 				let hostmultiSigPubKey = '111111111111111111111111111111111111111111111111111111111111111111'
 				let script_buf = chainbet.Host.encodePhase3(betTxId, participantTxId, hostP2SHTxId, hostmultiSigPubKey)
+				assert.equal(script_buf.length <= 220, true);
 
 				script_phase3 = script_buf.toString('hex');
 
 				asm_phase3 = BITBOX.Script.toASM(script_buf)
-				assert.equal(asm_phase3, 'OP_RETURN 00424554 01034a5e1e4baab89f3a32518a88c31bc87f618f76673e2' +
-											'cc77ab2127b7afdeda33b0e3e2357e806b6cdb1f70b54c3' +
-											'a3a17b6714ee1f0e68bebb44a74b1efd512098999e1c837' +
-											'c76a1b7fbb7e57baf87b309960f5ffefbf2a9b95dd890602272f644'+
-											'111111111111111111111111111111111111111111111111111111111111111111');
+				assert.equal(asm_phase3, 'OP_RETURN 00424554 0103 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 999e1c837c76a1b7fbb7e57baf87b309960f5ffefbf2a9b95dd890602272f644 111111111111111111111111111111111111111111111111111111111111111111');
 			});
 		});
 	});
@@ -140,33 +135,15 @@ describe('#chainbet', () => {
 				let betTxId = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b'
 				let participantTxId = '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098'
 				// added 1 byte padding for 72 byte signatures
-				let participantSig1 = '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220a' +
-															'e0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce'
-				let participantSig2 = '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220a' +
-															'e0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce'
+				let participantSig1 = '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce'
+				let participantSig2 = '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce'
 				let script_buf = chainbet.Client.encodePhase4(betTxId, participantTxId, participantSig1, participantSig2)
+				assert.equal(script_buf.length <= 220, true);
 
 				script_phase4 = script_buf.toString('hex');
 
 				asm_phase4 = BITBOX.Script.toASM(script_buf)
-				assert.equal(asm_phase4, 'OP_RETURN 00424554 01044a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77a' + 
-											'b2127b7afdeda33b0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b' + 
-											'1efd512098003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb68' + 
-											'41f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e975' + 
-											'2585c53e7cce003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb' + 
-											'6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9' + 
-											'752585c53e7cce');
-			});
-		});
-	});
-
-	describe('#encodePhase5', () => {
-		fixtures.chainbet.encodePhase5.forEach((fixture) => {
-			it(`should encodePhase5`, () => {
-				
-				// TODO ...
-
-				assert.equal(true, true);
+				assert.equal(asm_phase4, 'OP_RETURN 424554 0104 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce 003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce');
 			});
 		});
 	});
@@ -177,13 +154,12 @@ describe('#chainbet', () => {
 				let betTxId = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
 				let secrVal = Buffer('0000000000000000000000000000000000000000000000000000000000000000', 'hex');
 				let script_buf = chainbet.Client.encodePhase6(betTxId, secrVal);
+				assert.equal(script_buf.length <= 220, true);
 
 				script_phase6 = script_buf.toString('hex');
 
 				asm_phase6 = BITBOX.Script.toASM(script_buf)
-				assert.equal(asm_phase6, 'OP_RETURN 00424554 0106' + 
-															'4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b'+
-															'0000000000000000000000000000000000000000000000000000000000000000');
+				assert.equal(asm_phase6, 'OP_RETURN 00424554 0106 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0000000000000000000000000000000000000000000000000000000000000000');
 			});
 		});
 	});
@@ -193,7 +169,13 @@ describe('#chainbet', () => {
 			it(`should decodePhase1`, () => {
 
 				// Decode Phase 1 (with optional address)
-				var phaseData = Buffer(script_phase1.split('004245544c')[1], 'hex').slice(1,script_phase1.split('00424554')[1].length-1);
+				//var phaseData = Buffer(script_phase1.split('004245544c')[1], 'hex').slice(1,script_phase1.split('00424554')[1].length-1);
+				var phaseData = [];
+				BITBOX.Script.toASM(Buffer(script_phase1, 'hex')).split(" ")
+					.forEach((item, index) => { 
+						if(index > 1)
+							phaseData.push(Buffer(item, 'hex')); 
+					});
 				let actual_phase1 = chainbet.Core.decodePhaseData(phaseData);
 				let expected_phase1 = { 
 					version: 0x01, 
@@ -213,12 +195,17 @@ describe('#chainbet', () => {
 				assert.equal(actual_phase1.address, expected_phase1.address);
 
 				// Decode Phase 1 (without optional address)
-				phaseData = Buffer(script_phase1_noAddr.split('004245544c')[1], 'hex').slice(1,script_phase1_noAddr.split('00424554')[1].length-1);
+				phaseData = [];
+				BITBOX.Script.toASM(Buffer(script_phase1_noAddr, 'hex')).split(" ")
+					.forEach((item, index) => { 
+						if(index > 1)
+							phaseData.push(Buffer(item, 'hex')); 
+					});
 				let actual_phase1_noAddr = chainbet.Core.decodePhaseData(phaseData);
 				let expected_phase1_noAddr = {
-					version: 0x01,
-					phase: 0x01,
-					type: 0x01,
+					version: 1,
+					phase: 1,
+					type: 1,
 					amount: 1000,
 					hostCommitment: Buffer('1111111111111111111111111111111111111111', 'hex')
 				};
@@ -237,11 +224,16 @@ describe('#chainbet', () => {
 			it(`should decodePhase2`, () => {
 
 				// Decode Phase 2
-				let phaseData = Buffer(script_phase2.split('004245544c')[1], 'hex').slice(1,script_phase2.split('00424554')[1].length-1);
+				var phaseData = [];
+				BITBOX.Script.toASM(Buffer(script_phase2, 'hex')).split(" ")
+					.forEach((item, index) => { 
+						if(index > 1)
+							phaseData.push(Buffer(item, 'hex')); 
+					});				
 				let actual_phase2 = chainbet.Core.decodePhaseData(phaseData);
 				var expected_phase2 = { 
-					version: 0x01, 
-					phase: 0x02, 
+					version: 1, 
+					phase: 2, 
 					betTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b', 
 					multisigPubKey:  '000000000000000000000000000000000000000000000000000000000000000000',
 					secretCommitment: '1111111111111111111111111111111111111111'
@@ -261,12 +253,18 @@ describe('#chainbet', () => {
 	describe('#decodePhase3', () => {
 		fixtures.chainbet.decode.forEach((fixture) => {
 			it(`should decodePhase3`, () => {
+
 				// Decode Phase 3
-				let phaseData = Buffer(script_phase3.split('004245544c')[1], 'hex').slice(1,script_phase3.split('00424554')[1].length-1);
+				var phaseData = [];
+				BITBOX.Script.toASM(Buffer(script_phase3, 'hex')).split(" ")
+					.forEach((item, index) => { 
+						if(index > 1)
+							phaseData.push(Buffer(item, 'hex')); 
+					});							
 				let actual_phase3 = chainbet.Core.decodePhaseData(phaseData);
 				let expected_phase3 = { 
-					version: 0x01, 
-					phase: 0x03, 
+					version: 1, 
+					phase: 3, 
 					betTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b', 
 					participantOpReturnTxId: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
 					hostP2SHTxId: '999e1c837c76a1b7fbb7e57baf87b309960f5ffefbf2a9b95dd890602272f644',
@@ -292,17 +290,20 @@ describe('#chainbet', () => {
 		fixtures.chainbet.decode.forEach((fixture) => {
 			it(`should decodePhase4`, () => {
 				// Decode Phase 4
-				let phaseData = Buffer(script_phase4.split('004245544c')[1], 'hex').slice(1,script_phase4.split('00424554')[1].length-1);
+				var phaseData = [];
+				BITBOX.Script.toASM(Buffer(script_phase4, 'hex')).split(" ")
+					.forEach((item, index) => { 
+						if(index > 1)
+							phaseData.push(Buffer(item, 'hex')); 
+					});			
 				let actual_phase4 = chainbet.Core.decodePhaseData(phaseData);
 				let expected_phase4 = { 
-					version: 0x01, 
-					phase: 0x04, 
+					version: 1, 
+					phase: 4, 
 					betTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b', 
 					participantP2SHTxId: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
-					participantSig1: '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220a' +
-														'e0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce',
-					participantSig2: '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220a' +
-														'e0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce' 
+					participantSig1: '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce',
+					participantSig2: '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce' 
 				}
 				assert.equal(actual_phase4.participantP2SHTxId.length, 32);
 				assert.equal(actual_phase4.participantSig1.length, 72);
@@ -321,11 +322,15 @@ describe('#chainbet', () => {
 		fixtures.chainbet.decode.forEach((fixture) => {
 			it(`should decodePhase6`, () => {
 				// Decode Phase 6
-				let phaseData = Buffer(script_phase6.split('004245544c')[1], 'hex').slice(1,script_phase6.split('00424554')[1].length-1);
-				let actual_phase6 = chainbet.Core.decodePhaseData(phaseData);
+				var phaseData = [];
+				BITBOX.Script.toASM(Buffer(script_phase6, 'hex')).split(" ")
+					.forEach((item, index) => { 
+						if(index > 1)
+							phaseData.push(Buffer(item, 'hex')); 
+					});					let actual_phase6 = chainbet.Core.decodePhaseData(phaseData);
 				let expected_phase6 = { 
-					version: 0x01, 
-					phase: 0x06, 
+					version: 1, 
+					phase: 6, 
 					betTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b', 
 					secretValue: '0000000000000000000000000000000000000000000000000000000000000000'
 				}
