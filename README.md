@@ -1,8 +1,10 @@
-## ChainBet npm library and examples
+## Node.js implementation of the Bitcoin Cash ChainBet protocol
 
-This repo contains methods for using the ChainBet protocol as specified here: [https://github.com/fyookball/ChainBet](https://github.com/fyookball/ChainBet).  Examples are provided to demonstrate usage of the npm library.
+This repo contains a node.js implementation of the ChainBet protocol. The specification of the ChainBet protocol is here: [https://github.com/fyookball/ChainBet](https://github.com/fyookball/ChainBet).  An example program (coinflip.js) and a npm package are provided to demonstrate how to use the npm package.
 
-## coinflip.js Example
+## Coinflip.js Example
+
+The following coinflip.js example shows a simple command-line program which facilitates a trustless p2p coin flip bet on the Bitcoin Cash blockchain using the ChainBet npm package.  Running this example requires that at least one player is already running the program in "client mode" before another player uses "host mode" to announce a coin flip bet wager.
 
  1. install node.js (v8.11.3 or later)
  2. `git clone https://github.com/jcramer/chainbet`
