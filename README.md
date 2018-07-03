@@ -1,4 +1,8 @@
-## Bitcoin Cash CoinFlip Demo Usage
+## ChainBet npm library and examples
+
+This repo contains methods for using the ChainBet protocol as specified here: [https://github.com/fyookball/ChainBet](https://github.com/fyookball/ChainBet).  Examples are provided to demonstrate usage of the npm library.
+
+## coinflip.js Example
 
  1. install node.js (v8.11.3 or later)
  2. `git clone https://github.com/jcramer/chainbet`
@@ -6,14 +10,11 @@
  4. `npm install`
  5. `node coinflip`
 
-
 ### CoinFlip Winner
-![CoinFlip Winner](https://github.com/jcramer/chainbet/blob/master/examples/Coin%20Flip%20Winner.png?raw=true)
-
+![CoinFlip Winner](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Winner.png?raw=true)
 
 ### CoinFlip Loser
-![CoinFlip Loser](https://github.com/jcramer/chainbet/blob/master/examples/Coin%20Flip%20Loser.png?raw=true)
-
+![CoinFlip Loser](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Loser.png?raw=true)
 
 ## Dev Usage
 
