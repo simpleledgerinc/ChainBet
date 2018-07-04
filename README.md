@@ -20,7 +20,9 @@ The following coinflip.js example shows a simple command-line program which faci
 
 ![CoinFlip Loser](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Loser.png?raw=true)
 
-## Dev Usage
+## Npm Package
+
+Install via `npm install chainbet`
 
 ```js
 let chainbet = require('chainbet');

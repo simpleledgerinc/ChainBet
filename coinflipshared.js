@@ -19,7 +19,7 @@ module.exports = class CoinFlipShared {
 		script = script.concat([
 			BITBOX.Script.opcodes.OP_EQUALVERIFY,
 			BITBOX.Script.opcodes.OP_ELSE,
-			0x51, // use 0x58 for 8 blocks
+			0x54, // use 0x54 for 4 blocks
 			BITBOX.Script.opcodes.OP_CHECKSEQUENCEVERIFY,
 			BITBOX.Script.opcodes.OP_DROP,
 			BITBOX.Script.opcodes.OP_ENDIF,
