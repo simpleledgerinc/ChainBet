@@ -10,20 +10,20 @@ module.exports = class Client {
 		var pushdatalength = 0x57
 
 		let script = [
-		BITBOX.Script.opcodes.OP_RETURN,
-		// pushdata, 4 bytes
-		0x04,
-		// 4 byte Terab prefix
-		0x00,
-		0x42,
-		0x45,
-		0x54,
-		BITBOX.Script.opcodes.OP_PUSHDATA1,
-		pushdatalength,
-		// 1 byte version id
-		0x01,
-		// 1 byte phase id
-		0x02
+			BITBOX.Script.opcodes.OP_RETURN,
+			// pushdata, 4 bytes
+			0x04,
+			// 4 byte Terab prefix
+			0x00,
+			0x42,
+			0x45,
+			0x54,
+			BITBOX.Script.opcodes.OP_PUSHDATA1,
+			pushdatalength,
+			// 1 byte version id
+			0x01,
+			// 1 byte phase id
+			0x02
 		];
 
 		// 32 byte betTxId hex
@@ -48,20 +48,20 @@ module.exports = class Client {
 		var pushdatalength = 0xd2
 
 		let script = [
-		BITBOX.Script.opcodes.OP_RETURN,
-		// pushdata, 4 bytes
-		0x04,
-		// 4 byte prefix
-		0x00,
-		0x42,
-		0x45,
-		0x54,
-		BITBOX.Script.opcodes.OP_PUSHDATA1,
-		pushdatalength,
-		// 1 byte version id
-		0x01,
-		// 1 byte phase id
-		0x04,
+			BITBOX.Script.opcodes.OP_RETURN,
+			// pushdata, 4 bytes
+			0x04,
+			// 4 byte prefix
+			0x00,
+			0x42,
+			0x45,
+			0x54,
+			BITBOX.Script.opcodes.OP_PUSHDATA1,
+			pushdatalength,
+			// 1 byte version id
+			0x01,
+			// 1 byte phase id
+			0x04,
 		];
 
 		// 32 byte bet tx id
@@ -90,20 +90,20 @@ module.exports = class Client {
 		var pushdatalength = 0x42
 	
 		let script = [
-		BITBOX.Script.opcodes.OP_RETURN,
-		// pushdata, 4 bytes
-		0x04,
-		// 4 byte prefix
-		0x00,
-		0x42,
-		0x45,
-		0x54,
-		BITBOX.Script.opcodes.OP_PUSHDATA1,
-		pushdatalength,
-		// 1 byte version id
-		0x01,
-		// 1 byte phase id
-		0x06,
+			BITBOX.Script.opcodes.OP_RETURN,
+			// pushdata, 4 bytes
+			0x04,
+			// 4 byte prefix
+			0x00,
+			0x42,
+			0x45,
+			0x54,
+			BITBOX.Script.opcodes.OP_PUSHDATA1,
+			pushdatalength,
+			// 1 byte version id
+			0x01,
+			// 1 byte phase id
+			0x06,
 		];
 
 		// 32 byte bet txn id
