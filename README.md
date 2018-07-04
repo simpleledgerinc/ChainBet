@@ -13,9 +13,11 @@ The following coinflip.js example shows a simple command-line program which faci
  5. `node coinflip`
 
 ### CoinFlip Winner
+
 ![CoinFlip Winner](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Winner.png?raw=true)
 
 ### CoinFlip Loser
+
 ![CoinFlip Loser](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Loser.png?raw=true)
 
 ## Dev Usage
