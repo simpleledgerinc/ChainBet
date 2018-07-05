@@ -247,7 +247,7 @@ module.exports = class CoinFlipHost extends Host {
         console.log('---------------------------------------------------------------------------------');
         
 
-        let winTxnId = await CoinFlipHost.hostClaimWinSecret(this.wallet, this.betState.clientSecret, betScriptBuf, betTxId, this.betState.amount);
+        let winTxnId = await CoinFlipHost.hostClaimWinSecret(this.wallet, this.betState.secret, this.betState.clientSecret, betScriptBuf, betTxId, this.betState.amount);
         if(winTxnId.length != 64)
         {
             console.log("\nWe're sorry. Something terrible went wrong when trying to claim your winnings... " + winTxnId);
@@ -367,7 +367,7 @@ module.exports = class CoinFlipHost extends Host {
         return txId;
     }
 
-    static async hostClaimWinSecret(wallet, clientSecret, betScript, betTxId, betAmount){
+    static async hostClaimWinSecret(wallet, hostSecret, clientSecret, betScript, betTxId, betAmount){
 
         let purseAmount = Core.purseAmount(betAmount);
 
@@ -391,6 +391,10 @@ module.exports = class CoinFlipHost extends Host {
         // host signature
         redeemScriptSig.push(hostSig.length)
         hostSig.forEach((item, index) => { redeemScriptSig.push(item); });
+
+        // host secret
+        redeemScriptSig.push(hostSecret.length);
+        hostSecret.forEach((item, index) => { redeemScriptSig.push(item); });
 
         // client secret
         redeemScriptSig.push(clientSecret.length);

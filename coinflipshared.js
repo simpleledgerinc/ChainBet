@@ -10,6 +10,7 @@ module.exports = class CoinFlipShared {
 		let script = [
 			BITBOX.Script.opcodes.OP_IF,
 			BITBOX.Script.opcodes.OP_IF,
+			BITBOX.Script.opcodes.OP_DUP,
 			BITBOX.Script.opcodes.OP_HASH160,
 			clientCommitment.length
 		];
@@ -17,6 +18,28 @@ module.exports = class CoinFlipShared {
 		clientCommitment.forEach(i => script.push(i));
 	
 		script = script.concat([
+			BITBOX.Script.opcodes.OP_EQUALVERIFY,
+			BITBOX.Script.opcodes.OP_OVER,
+			BITBOX.Script.opcodes.OP_HASH160,
+			hostCommitment.length
+		]);
+		hostCommitment.forEach(i => script.push(i));
+
+		script = script.concat([
+			BITBOX.Script.opcodes.OP_EQUALVERIFY,
+			BITBOX.Script.opcodes.OP_4,
+			BITBOX.Script.opcodes.OP_SPLIT,
+			BITBOX.Script.opcodes.OP_DROP,
+			BITBOX.Script.opcodes.OP_BIN2NUM,
+			BITBOX.Script.opcodes.OP_SWAP,
+			BITBOX.Script.opcodes.OP_4,
+			BITBOX.Script.opcodes.OP_SPLIT,
+			BITBOX.Script.opcodes.OP_DROP,
+			BITBOX.Script.opcodes.OP_BIN2NUM,
+			BITBOX.Script.opcodes.OP_ADD,
+			BITBOX.Script.opcodes.OP_2,
+			BITBOX.Script.opcodes.OP_MOD,
+			BITBOX.Script.opcodes.OP_1,
 			BITBOX.Script.opcodes.OP_EQUALVERIFY,
 			BITBOX.Script.opcodes.OP_ELSE,
 			0x54, // use 0x54 for 4 blocks
