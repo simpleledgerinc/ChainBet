@@ -70,10 +70,15 @@ async function main(context) {
     // escrows = await chainbet.CoinFlipShared.processOldEscrows(escrows);
 
     // 3) startup a single bet workflow
-    if (context.role == "1") // Host Mode
+    if (context.role == "1") {
+        // Host Mode
         bet = new chainbet.CoinFlipHost(context.wif, context.pubkey, context.address, chainfeed);
-    else // Client Mode
-        bet = new chainbet.CoinFlipClient(context.wif, context.pubkey, context.address, chainfeed, coinflip.cli, coinflip.debug);
+        bet.run();
+    } else { 
+        // Client Mode
+        bet = new chainbet.CoinFlipClient(context.wif, context.pubkey, context.address, chainfeed, coinflip.debug);
+        bet.run();
+    }  
 
     // 4) create while loop to keep program alive while the async bet workflow is running.
     while (!bet.complete) {

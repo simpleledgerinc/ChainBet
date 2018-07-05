@@ -9,14 +9,13 @@ let CoinFlipShared = require('./coinflipshared')
 
 // CoinFlipClient class represents 1 bet's state management
 module.exports = class CoinFlipHost extends Host {
-    constructor(wif, pubkey, address, feed, useCli=true, debug=false){
+    constructor(wif, pubkey, address, feed, debug=false){
         super();
         this.wallet = {};
         this.wallet.wif = wif;
         this.wallet.pubkey = pubkey;
         this.wallet.address = address;
 
-        this.useCli = useCli;
         this.isDebugging = debug;
 
         this.betState = {};
@@ -26,12 +25,9 @@ module.exports = class CoinFlipHost extends Host {
         // set shared chainfeed listener (each client will periodically check for messages)
         // in future can set filter within the feed to improve performance
         this.feed = feed;
-
-        if(this.useCli)
-            this.runCli();
     }
 
-    async runCli(){
+    async run(){
 
         // check account balance then run bet
         if(!(await Core.checkSufficientBalance(this.wallet.address))) {
