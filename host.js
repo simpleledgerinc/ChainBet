@@ -53,21 +53,6 @@ module.exports = class Host {
 	
 		let script = [
 			BITBOX.Script.opcodes.OP_RETURN,
-<<<<<<< HEAD
-			// pushdata, 4 bytes
-			0x04,
-			// 4 byte prefix
-			0x00,
-			0x42,
-			0x45,
-			0x54,
-			BITBOX.Script.opcodes.OP_PUSHDATA1,
-			pushdatalength,
-			// 1 byte version id
-			0x01,
-			// 1 byte phase id
-			0x03,
-=======
 			// 4 byte prefix
 			Buffer('00424554', 'hex'),
 			// 1 byte version id / 1 byte phase
@@ -80,7 +65,6 @@ module.exports = class Host {
 			Buffer(hostP2SHTxId, 'hex'),
 			// 33 byte host (Alice) Multisig Pub Key
 			Buffer(hostMultisigPubKeyHex, 'hex')
->>>>>>> multiple pushdata encode/decode
 		];
 
 		return BITBOX.Script.encode(script)

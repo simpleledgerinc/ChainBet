@@ -8,21 +8,6 @@ module.exports = class Client {
 
 		let script = [
 			BITBOX.Script.opcodes.OP_RETURN,
-<<<<<<< HEAD
-			// pushdata, 4 bytes
-			0x04,
-			// 4 byte Terab prefix
-			0x00,
-			0x42,
-			0x45,
-			0x54,
-			BITBOX.Script.opcodes.OP_PUSHDATA1,
-			pushdatalength,
-			// 1 byte version id
-			0x01,
-			// 1 byte phase id
-			0x02
-=======
 			// 4 byte prefix
 			Buffer('00424554', 'hex'),
 			// 1 byte version id / 1 byte phase id
@@ -33,7 +18,6 @@ module.exports = class Client {
 			Buffer(multisigPubKeyHex, 'hex'),
 			// 32 byte participant (Bob) secret commitment
 			Buffer(secretCommitmentHex, 'hex')
->>>>>>> multiple pushdata encode/decode
 		];
 
 		return BITBOX.Script.encode(script)
@@ -44,21 +28,6 @@ module.exports = class Client {
 
 		let script = [
 			BITBOX.Script.opcodes.OP_RETURN,
-<<<<<<< HEAD
-			// pushdata, 4 bytes
-			0x04,
-			// 4 byte prefix
-			0x00,
-			0x42,
-			0x45,
-			0x54,
-			BITBOX.Script.opcodes.OP_PUSHDATA1,
-			pushdatalength,
-			// 1 byte version id
-			0x01,
-			// 1 byte phase id
-			0x04,
-=======
 			// 4 byte prefix
 			Buffer('424554','hex'),
 			// 1 byte version id / 1 phase byte
@@ -71,7 +40,6 @@ module.exports = class Client {
 			Buffer(participantSig1, 'hex'),
 			// 72 byte Participant signature 2
 			Buffer(participantSig2, 'hex'),
->>>>>>> multiple pushdata encode/decode
 		];
 
 		return BITBOX.Script.encode(script)
@@ -81,30 +49,11 @@ module.exports = class Client {
 	static encodePhase6(betId, secretValue) {
 
 		let script = [
-<<<<<<< HEAD
-			BITBOX.Script.opcodes.OP_RETURN,
-			// pushdata, 4 bytes
-			0x04,
-			// 4 byte prefix
-			0x00,
-			0x42,
-			0x45,
-			0x54,
-			BITBOX.Script.opcodes.OP_PUSHDATA1,
-			pushdatalength,
-			// 1 byte version id
-			0x01,
-			// 1 byte phase id
-			0x06,
-		];
-
-=======
 		BITBOX.Script.opcodes.OP_RETURN,
 		// 4 byte prefix
 		Buffer('00424554', 'hex'),
 		// 1 byte version id / 1 byte phase id
 		Buffer('0106', 'hex'),
->>>>>>> multiple pushdata encode/decode
 		// 32 byte bet txn id
 		Buffer(betId, 'hex'),
 		// 32 byte Secret value
