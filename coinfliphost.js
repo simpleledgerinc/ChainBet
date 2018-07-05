@@ -141,8 +141,8 @@ module.exports = class CoinFlipHost extends Host {
                 // ignore target address field from host for now...
                 let bet = clientPhase4Messages[clientPhase4Messages.length-1];
                 this.betState.clientP2SHTxId = bet.participantP2SHTxId.toString('hex');
-                this.betState.participantSig1 = Utils.unpadSig(bet.participantSig1);
-                this.betState.participantSig2 = Utils.unpadSig(bet.participantSig2);
+                this.betState.participantSig1 = bet.participantSig1;
+                this.betState.participantSig2 = bet.participantSig2;
 
                 console.log("\nThe client has funded the bet! \n(msg txn: " + bet.op_return_txnId + ")");
                 console.log("(escrow txn: " + this.betState.clientP2SHTxId + ")");

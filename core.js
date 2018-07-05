@@ -171,10 +171,11 @@ module.exports = class Core {
 			results.betTxId = bufArray[1];
 			// 32 byte Participant Txn Id
 			results.participantP2SHTxId = bufArray[2];
+			let sigs = bufArray[3];
 			// 72 byte Participant Signature 1
-			results.participantSig1 = bufArray[3];
+			results.participantSig1 = Utils.unpadSig(Buffer.concat([ sigs.slice(0,71), Buffer('c1', 'hex') ]));
 			// 72 byte Participant Signature 2
-			results.participantSig2 = bufArray[4];
+			results.participantSig2 = Utils.unpadSig(Buffer.concat([ sigs.slice(71), Buffer('c1', 'hex') ]));
 
 		// Phase 6 specific fields
 		} else if(phase === 6) {

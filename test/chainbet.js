@@ -132,18 +132,19 @@ describe('#chainbet', () => {
 	describe('#encodePhase4', () => {
 		fixtures.chainbet.encodePhase4.forEach((fixture) => {
 			it(`should encodePhase4`, () => {
-				let betTxId = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b'
-				let participantTxId = '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098'
+				let betTxId = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
+				let participantTxId = '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098';
+
 				// added 1 byte padding for 72 byte signatures
-				let participantSig1 = '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce'
-				let participantSig2 = '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce'
-				let script_buf = chainbet.Client.encodePhase4(betTxId, participantTxId, participantSig1, participantSig2)
+				let participantSig1 = Buffer('3045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cc1', 'hex');
+				let participantSig2 = Buffer('3045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cc1', 'hex');
+				let script_buf = chainbet.Client.encodePhase4(betTxId, participantTxId, participantSig1, participantSig2);
 				assert.equal(script_buf.length <= 220, true);
 
 				script_phase4 = script_buf.toString('hex');
 
-				asm_phase4 = BITBOX.Script.toASM(script_buf)
-				assert.equal(asm_phase4, 'OP_RETURN 424554 0104 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce 003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce');
+				asm_phase4 = BITBOX.Script.toASM(script_buf);
+				assert.equal(asm_phase4, 'OP_RETURN 00424554 0104 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7c003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7c');
 			});
 		});
 	});
@@ -302,18 +303,18 @@ describe('#chainbet', () => {
 					phase: 4, 
 					betTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b', 
 					participantP2SHTxId: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
-					participantSig1: '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce',
-					participantSig2: '003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cce' 
+					participantSig1: Buffer('3045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cc1', 'hex'),
+					participantSig2: Buffer('3045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cc1', 'hex') 
 				}
 				assert.equal(actual_phase4.participantP2SHTxId.length, 32);
-				assert.equal(actual_phase4.participantSig1.length, 72);
-				assert.equal(actual_phase4.participantSig2.length, 72); 
+				assert.equal(actual_phase4.participantSig1.length, expected_phase4.participantSig1.length);
+				assert.equal(actual_phase4.participantSig2.length, expected_phase4.participantSig2.length); 
 				assert.equal(actual_phase4.version, expected_phase4.version);
 				assert.equal(actual_phase4.phase, expected_phase4.phase);
 				assert.equal(actual_phase4.betTxId.toString('hex'), expected_phase4.betTxId);
 				assert.equal(actual_phase4.participantP2SHTxId.toString('hex'), expected_phase4.participantP2SHTxId);
-				assert.equal(actual_phase4.participantSig1.toString('hex'), expected_phase4.participantSig1);
-				assert.equal(actual_phase4.participantSig2.toString('hex'), expected_phase4.participantSig2);
+				assert.equal(actual_phase4.participantSig1.toString('hex'), expected_phase4.participantSig1.toString('hex'));
+				assert.equal(actual_phase4.participantSig2.toString('hex'), expected_phase4.participantSig2.toString('hex'));
 			});
 		});
 	});

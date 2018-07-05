@@ -153,11 +153,9 @@ module.exports = class CoinFlipClient extends Client {
         
         // build bob's signatures
         let bobEscrowSig = CoinFlipShared.createEscrowSignature(this.wallet, escrowTxid, escrowBuf, this.betState.amount, betScriptBuf);
-        bobEscrowSig = Utils.padSig(bobEscrowSig);
         
         let hostEscrowBuf = CoinFlipShared.buildCoinFlipHostEscrowScript(this.betState.hostMultisigPubKey, this.betState.hostCommitment, this.wallet.pubkey);
         let aliceEscrowSig = CoinFlipShared.createEscrowSignature(this.wallet, this.betState.hostP2SHTxId, hostEscrowBuf, this.betState.amount, betScriptBuf);
-        aliceEscrowSig = Utils.padSig(aliceEscrowSig);
 
         // prepare to send Phase 4 OP_RETURN
         let phase4MsgTxId = await CoinFlipClient.sendPhase4Message(this.wallet, this.betState.betId, escrowTxid, bobEscrowSig, aliceEscrowSig);

@@ -18,6 +18,7 @@ module.exports = class Utils {
 	// }
 
 	static padSig(sig){
+		sig = Buffer(sig, 'hex');
 		if(sig.length == 71){
 			var sigHex = sig.toString('hex');
 			sigHex = '00' + sigHex;
@@ -28,10 +29,10 @@ module.exports = class Utils {
 	}
 
 	static unpadSig(sig){
+		sig = Buffer(sig, 'hex')
 		if(sig[0] == 0){
 			return sig.slice(1,72);
 		}
-
 		return sig;
 	}
 

@@ -1,6 +1,8 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 
+let Utils = require('./utils');
+
 module.exports = class Client {
 
 	// Phase 2: Bet Participant Acceptance
@@ -26,20 +28,29 @@ module.exports = class Client {
 	// Phase 4: Bet Participant Funding
 	static encodePhase4(betId, clientEscrowTxId, participantSig1, participantSig2) {
 
+		// pad sigs to ensure 72 bytes
+		var sig1 = Utils.padSig(participantSig1);
+		var sig2 = Utils.padSig(participantSig2);
+
+		// chop off sighash type (last byte)
+		sig1 = sig1.slice(0,71);
+		sig2 = sig2.slice(0,71);
+
+		// combine sigs into a single value for one pushdata
+		var sigs = Buffer.concat([sig1, sig2]);
+
 		let script = [
 			BITBOX.Script.opcodes.OP_RETURN,
 			// 4 byte prefix
-			Buffer('424554','hex'),
+			Buffer('00424554','hex'),
 			// 1 byte version id / 1 phase byte
 			Buffer('0104', 'hex'),
 			// 32 byte bet tx id
 			Buffer(betId, 'hex'),
 			// 32 byte bet tx id
 			Buffer(clientEscrowTxId, 'hex'),
-			// 72 byte Participant signature 1
-			Buffer(participantSig1, 'hex'),
-			// 72 byte Participant signature 2
-			Buffer(participantSig2, 'hex'),
+			// 144 bytes for 2 sigs)
+			sigs,
 		];
 
 		return BITBOX.Script.encode(script)
