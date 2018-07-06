@@ -14,7 +14,7 @@ module.exports = class Host {
 			BITBOX.Script.opcodes.OP_RETURN,
 			// 4 byte prefix
 			Buffer('00424554', 'hex'),
-			// 1 byte version id / 1 byte phase / 1 byte bet type
+			// 1 byte version id / 1 betType byte /  1 phase byte
 			Buffer('010101', 'hex'),
 			// add 8 byte amount
 			Utils.amount_2_hex(amount),
@@ -53,7 +53,7 @@ module.exports = class Host {
 			BITBOX.Script.opcodes.OP_RETURN,
 			// 4 byte prefix
 			Buffer('00424554', 'hex'),
-			// 1 byte betType / 1 byte version id / 1 byte phase
+			// 1 byte version id / 1 betType byte /  1 phase byte
 			Buffer('010103', 'hex'),
 			// 32 byte bet tx id
 			Buffer(betId, 'hex'),

@@ -12,7 +12,7 @@ module.exports = class Client {
 			BITBOX.Script.opcodes.OP_RETURN,
 			// 4 byte prefix
 			Buffer('00424554', 'hex'),
-			// 1 byte version id / 1 byte phase id
+			// 1 byte version id / 1 betType byte /  1 phase byte
 			Buffer('010102', 'hex'),
 			// 32 byte betTxId hex
 			Buffer(betId, 'hex'),
@@ -43,7 +43,7 @@ module.exports = class Client {
 			BITBOX.Script.opcodes.OP_RETURN,
 			// 4 byte prefix
 			Buffer('00424554','hex'),
-			// 1 byte version id / 1 phase byte
+			// 1 byte version id / 1 betType byte /  1 phase byte
 			Buffer('010104', 'hex'),
 			// 32 byte bet tx id
 			Buffer(betId, 'hex'),
@@ -63,7 +63,7 @@ module.exports = class Client {
 		BITBOX.Script.opcodes.OP_RETURN,
 		// 4 byte prefix
 		Buffer('00424554', 'hex'),
-		// 1 byte version id / 1 byte phase id
+		// 1 byte version id / 1 betType byte /  1 phase byte
 		Buffer('010106', 'hex'),
 		// 32 byte bet txn id
 		Buffer(betId, 'hex'),

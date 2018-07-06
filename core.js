@@ -127,8 +127,8 @@ module.exports = class Core {
 		//let buf = Buffer.from(data[0].trim(), 'hex');  // NOTE: the index of data was changed to 0 due to MessageFeed listen method.
 
 		// grab the common fields
-		let betType = bufArray[0].slice(0,1).readUInt8();
-		let version = bufArray[0].slice(1,2).readUInt8();
+		let version = bufArray[0].slice(0,1).readUInt8();
+		let betType = bufArray[0].slice(1,2).readUInt8();
 		let phase = bufArray[0].slice(2,3).readUInt8();
 		let results = { betType: betType, version: version, phase: phase };
 
