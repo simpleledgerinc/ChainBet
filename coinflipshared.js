@@ -37,6 +37,7 @@ module.exports = class CoinFlipShared {
 			BITBOX.Script.opcodes.OP_DROP,
 			BITBOX.Script.opcodes.OP_BIN2NUM,
 			BITBOX.Script.opcodes.OP_ADD,
+			BITBOX.Script.opcodes.OP_ABS,
 			BITBOX.Script.opcodes.OP_2,
 			BITBOX.Script.opcodes.OP_MOD,
 			BITBOX.Script.opcodes.OP_1,
