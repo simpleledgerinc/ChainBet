@@ -16,6 +16,15 @@ coinflip.cli = true;
 // 1) save user specified args to disk
 // TODO LATER
 
+console.log('\n     Even - Odd Dice Game       ');
+console.log('    .-------.    ______         ');
+console.log('   /   o   /|   /\\     \\      ');
+console.log('  /_______/o|  /o \\  o  \\     ');
+console.log('  | o     | | /   o\\_____\\    ');
+console.log('  |   o   |o/ \\o   /o    /     ');
+console.log('  |     o |/   \\ o/  o  /      ');
+console.log("  '-------'     \\/____o/       ");
+
 if(!coinflip.debug) {
     inquirer.prompt(function() { // 1) Ask the user to specify role (Host or Client)
         console.log('\n');
@@ -25,8 +34,8 @@ if(!coinflip.debug) {
                             type: "list", 
                             name: "role", 
                             message: "What do you want to do?",
-                            choices: [{ name: 'Host coinflip bet', value: 'host' }, 
-                                        { name:'Join coinflip bet', value: 'client' }, 
+                            choices: [{ name: 'Host a dice roll (ODD wins)', value: 'host' }, 
+                                        { name:'Join a dice roll (EVEN wins)', value: 'client' }, 
                                         //{ name: 'Import new private key', value: 'import' }, 
                                         //{ name: 'Withdraw funds', value: 'withdraw' }
                                     ],
