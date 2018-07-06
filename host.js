@@ -33,14 +33,12 @@ module.exports = class Host {
 			} else
 				throw new Error("Unsupported address format provided");
 
-			// convert from base58 to hex (giving us the HASH160)   
-			var hash160 = base58.decode(targetAddress);
-			let hash160_buf = Buffer(hash160, 'hex');
+			// convert from legacy address to binary   
+			var addrBuf = Buffer(base58.decode(targetAddress), 'hex');
 
 			// chop off network byte and 4 checksum bytes
-			hash160_buf = hash160_buf.slice(1,21);
-			script.push(hash160_buf);
-			//hash160_buf.forEach((item, index) => { script.push(item); })
+			let hash160 = addrBuf.slice(1,21);
+			script.push(hash160);
 		}
 
 		let encoded = BITBOX.Script.encode(script);
@@ -55,8 +53,8 @@ module.exports = class Host {
 			BITBOX.Script.opcodes.OP_RETURN,
 			// 4 byte prefix
 			Buffer('00424554', 'hex'),
-			// 1 byte version id / 1 byte phase
-			Buffer('0103', 'hex'),
+			// 1 byte betType / 1 byte version id / 1 byte phase
+			Buffer('010103', 'hex'),
 			// 32 byte bet tx id
 			Buffer(betId, 'hex'),
 			// 32 byte participant tx id

@@ -43,7 +43,7 @@ module.exports = class CoinFlipClient extends Client {
         while(this.betState.phase == 1) {
 
             var hostPhase1Messages = this.feed.messages.filter(function(item){ 
-                return item.phase == 1 & item.type == 1; 
+                return item.phase == 1 & item.betType == 1; 
             });
 
             if(hostPhase1Messages.length > 0){

@@ -17,9 +17,9 @@ module.exports = class Utils {
 
 	// }
 
-	static padSig(sig){
+	static padSigAfterDerAndSigHashRemoval(sig){
 		sig = Buffer(sig, 'hex');
-		if(sig.length == 71){
+		if(sig.length == 69){
 			var sigHex = sig.toString('hex');
 			sigHex = '00' + sigHex;
 			sig = Buffer(sigHex, 'hex');
@@ -28,10 +28,10 @@ module.exports = class Utils {
 		return sig;
 	}
 
-	static unpadSig(sig){
+	static unpadSigBeforeDerAndSigHashConcat(sig){
 		sig = Buffer(sig, 'hex')
 		if(sig[0] == 0){
-			return sig.slice(1,72);
+			return sig.slice(1,70);
 		}
 		return sig;
 	}

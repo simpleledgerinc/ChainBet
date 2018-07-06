@@ -127,14 +127,13 @@ module.exports = class Core {
 		//let buf = Buffer.from(data[0].trim(), 'hex');  // NOTE: the index of data was changed to 0 due to MessageFeed listen method.
 
 		// grab the common fields
-		let version = bufArray[0].slice(0,1).readUInt8();
-		let phase = bufArray[0].slice(1,2).readUInt8();
-		let results = { version: version, phase: phase };
+		let betType = bufArray[0].slice(0,1).readUInt8();
+		let version = bufArray[0].slice(1,2).readUInt8();
+		let phase = bufArray[0].slice(2,3).readUInt8();
+		let results = { betType: betType, version: version, phase: phase };
 
 		// Phase 1 specific fields
 		if(phase === 1) {
-			// Bet Type
-			results.type = bufArray[0].slice(2,3).readUInt8();
 			// Bet Amount
 			results.amount = parseInt(bufArray[1].toString('hex'), 16);
 			// Host commitment
@@ -173,9 +172,9 @@ module.exports = class Core {
 			results.participantP2SHTxId = bufArray[2];
 			let sigs = bufArray[3];
 			// 72 byte Participant Signature 1
-			results.participantSig1 = Utils.unpadSig(Buffer.concat([ sigs.slice(0,71), Buffer('c1', 'hex') ]));
+			results.participantSig1 = Buffer.concat([Buffer('30', 'hex'), Utils.unpadSigBeforeDerAndSigHashConcat(sigs.slice(0,70)), Buffer('c1', 'hex') ]);
 			// 72 byte Participant Signature 2
-			results.participantSig2 = Utils.unpadSig(Buffer.concat([ sigs.slice(71), Buffer('c1', 'hex') ]));
+			results.participantSig2 = Buffer.concat([Buffer('30', 'hex'), Utils.unpadSigBeforeDerAndSigHashConcat(sigs.slice(70)), Buffer('c1', 'hex') ]);
 
 		// Phase 6 specific fields
 		} else if(phase === 6) {

@@ -106,7 +106,7 @@ describe('#chainbet', () => {
 				script_phase2 = script_buf.toString('hex');
 
 				let asm_phase2 = BITBOX.Script.toASM(script_buf)
-				assert.equal(asm_phase2, 'OP_RETURN 00424554 0102 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 000000000000000000000000000000000000000000000000000000000000000000 1111111111111111111111111111111111111111');
+				assert.equal(asm_phase2, 'OP_RETURN 00424554 010102 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 000000000000000000000000000000000000000000000000000000000000000000 1111111111111111111111111111111111111111');
 			});
 		});
 	});
@@ -124,7 +124,7 @@ describe('#chainbet', () => {
 				script_phase3 = script_buf.toString('hex');
 
 				asm_phase3 = BITBOX.Script.toASM(script_buf)
-				assert.equal(asm_phase3, 'OP_RETURN 00424554 0103 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 999e1c837c76a1b7fbb7e57baf87b309960f5ffefbf2a9b95dd890602272f644 111111111111111111111111111111111111111111111111111111111111111111');
+				assert.equal(asm_phase3, 'OP_RETURN 00424554 010103 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 999e1c837c76a1b7fbb7e57baf87b309960f5ffefbf2a9b95dd890602272f644 111111111111111111111111111111111111111111111111111111111111111111');
 			});
 		});
 	});
@@ -144,7 +144,7 @@ describe('#chainbet', () => {
 				script_phase4 = script_buf.toString('hex');
 
 				asm_phase4 = BITBOX.Script.toASM(script_buf);
-				assert.equal(asm_phase4, 'OP_RETURN 00424554 0104 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7c003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7c');
+				assert.equal(asm_phase4, 'OP_RETURN 00424554 010104 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 0045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7c0045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7c');
 			});
 		});
 	});
@@ -160,7 +160,7 @@ describe('#chainbet', () => {
 				script_phase6 = script_buf.toString('hex');
 
 				asm_phase6 = BITBOX.Script.toASM(script_buf)
-				assert.equal(asm_phase6, 'OP_RETURN 00424554 0106 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0000000000000000000000000000000000000000000000000000000000000000');
+				assert.equal(asm_phase6, 'OP_RETURN 00424554 010106 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0000000000000000000000000000000000000000000000000000000000000000');
 			});
 		});
 	});
@@ -179,18 +179,19 @@ describe('#chainbet', () => {
 					});
 				let actual_phase1 = chainbet.Core.decodePhaseData(phaseData);
 				let expected_phase1 = { 
+					betType: 0x01, 
 					version: 0x01, 
 					phase: 0x01, 
-					type: 0x01, 
 					amount: 1000, 
 					hostCommitment: Buffer('1111111111111111111111111111111111111111', 'hex'),
 					address: 'bitcoincash:qzs02v05l7qs5s24srqju498qu55dwuj0cx5ehjm2c'
 				};
 				assert.equal(actual_phase1.hostCommitment.length, 20);
 				assert.equal(actual_phase1.address.length, 54);
+				assert.equal(actual_phase1.betType, actual_phase1.betType);
 				assert.equal(actual_phase1.version, expected_phase1.version);
 				assert.equal(actual_phase1.phase, expected_phase1.phase);
-				assert.equal(actual_phase1.type, expected_phase1.type);
+				assert.equal(actual_phase1.betType, expected_phase1.betType);
 				assert.equal(actual_phase1.amount, expected_phase1.amount);
 				assert.equal(actual_phase1.hostCommitment.toString('hex'), expected_phase1.hostCommitment.toString('hex'))
 				assert.equal(actual_phase1.address, expected_phase1.address);
@@ -204,13 +205,14 @@ describe('#chainbet', () => {
 					});
 				let actual_phase1_noAddr = chainbet.Core.decodePhaseData(phaseData);
 				let expected_phase1_noAddr = {
-					version: 1,
-					phase: 1,
-					type: 1,
+					betType: 0x01, 
+					version: 0x01,
+					phase: 0x01,
 					amount: 1000,
 					hostCommitment: Buffer('1111111111111111111111111111111111111111', 'hex')
 				};
 				assert.equal(actual_phase1_noAddr.hostCommitment.length, 20);
+				assert.equal(actual_phase1_noAddr.betType, actual_phase1_noAddr.betType);
 				assert.equal(actual_phase1_noAddr.version, expected_phase1_noAddr.version);
 				assert.equal(actual_phase1_noAddr.phase, expected_phase1_noAddr.phase);
 				assert.equal(actual_phase1_noAddr.betType, expected_phase1_noAddr.betType);
@@ -233,8 +235,9 @@ describe('#chainbet', () => {
 					});				
 				let actual_phase2 = chainbet.Core.decodePhaseData(phaseData);
 				var expected_phase2 = { 
-					version: 1, 
-					phase: 2, 
+					betType: 0x01, 
+					version: 0x01, 
+					phase: 0x02, 
 					betTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b', 
 					multisigPubKey:  '000000000000000000000000000000000000000000000000000000000000000000',
 					secretCommitment: '1111111111111111111111111111111111111111'
@@ -242,6 +245,7 @@ describe('#chainbet', () => {
 				assert.equal(actual_phase2.betTxId.length, 32);
 				assert.equal(actual_phase2.multisigPubKey.length, 33);      
 				assert.equal(actual_phase2.secretCommitment.length, 20);
+				assert.equal(actual_phase2.betType, actual_phase2.betType);
 				assert.equal(actual_phase2.version, expected_phase2.version);
 				assert.equal(actual_phase2.phase, expected_phase2.phase);
 				assert.equal(actual_phase2.betTxId.toString('hex'), expected_phase2.betTxId);
@@ -264,8 +268,9 @@ describe('#chainbet', () => {
 					});							
 				let actual_phase3 = chainbet.Core.decodePhaseData(phaseData);
 				let expected_phase3 = { 
-					version: 1, 
-					phase: 3, 
+					betType: 0x01, 
+					version: 0x01, 
+					phase: 0x03, 
 					betTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b', 
 					participantOpReturnTxId: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
 					hostP2SHTxId: '999e1c837c76a1b7fbb7e57baf87b309960f5ffefbf2a9b95dd890602272f644',
@@ -275,7 +280,7 @@ describe('#chainbet', () => {
 				assert.equal(actual_phase3.participantOpReturnTxId.length, 32);
 				assert.equal(actual_phase3.hostP2SHTxId.length, 32);
 				assert.equal(actual_phase3.hostMultisigPubKey.length, 33);   
-
+				assert.equal(actual_phase3.betType, actual_phase3.betType);
 				assert.equal(actual_phase3.version, expected_phase3.version);
 				assert.equal(actual_phase3.phase, expected_phase3.phase);
 				assert.equal(actual_phase3.betTxId.toString('hex'), expected_phase3.betTxId);
@@ -299,8 +304,9 @@ describe('#chainbet', () => {
 					});			
 				let actual_phase4 = chainbet.Core.decodePhaseData(phaseData);
 				let expected_phase4 = { 
-					version: 1, 
-					phase: 4, 
+					betType: 0x01, 
+					version: 0x01, 
+					phase: 0x04, 
 					betTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b', 
 					participantP2SHTxId: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
 					participantSig1: Buffer('3045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cc1', 'hex'),
@@ -309,6 +315,7 @@ describe('#chainbet', () => {
 				assert.equal(actual_phase4.participantP2SHTxId.length, 32);
 				assert.equal(actual_phase4.participantSig1.length, expected_phase4.participantSig1.length);
 				assert.equal(actual_phase4.participantSig2.length, expected_phase4.participantSig2.length); 
+				assert.equal(actual_phase4.betType, expected_phase4.betType);
 				assert.equal(actual_phase4.version, expected_phase4.version);
 				assert.equal(actual_phase4.phase, expected_phase4.phase);
 				assert.equal(actual_phase4.betTxId.toString('hex'), expected_phase4.betTxId);
@@ -330,13 +337,15 @@ describe('#chainbet', () => {
 							phaseData.push(Buffer(item, 'hex')); 
 					});					let actual_phase6 = chainbet.Core.decodePhaseData(phaseData);
 				let expected_phase6 = { 
-					version: 1, 
-					phase: 6, 
+					betType: 0x01, 
+					version: 0x01, 
+					phase: 0x06, 
 					betTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b', 
 					secretValue: '0000000000000000000000000000000000000000000000000000000000000000'
 				}
 				assert.equal(actual_phase6.betTxId.length, 32);
 				assert.equal(actual_phase6.secretValue.length, 32);
+				assert.equal(actual_phase6.betType, actual_phase6.betType);
 				assert.equal(actual_phase6.version, expected_phase6.version);
 				assert.equal(actual_phase6.phase, expected_phase6.phase);
 				assert.equal(actual_phase6.betTxId.toString('hex'), expected_phase6.betTxId);
