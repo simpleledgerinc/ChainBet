@@ -16,35 +16,41 @@ coinflip.cli = true;
 // 1) save user specified args to disk
 // TODO LATER
 
-console.log('\n     Even - Odd Dice Game       ');
-console.log('    .-------.    ______         ');
-console.log('   /   o   /|   /\\     \\      ');
-console.log('  /_______/o|  /o \\  o  \\     ');
-console.log('  | o     | | /   o\\_____\\    ');
-console.log('  |   o   |o/ \\o   /o    /     ');
-console.log('  |     o |/   \\ o/  o  /      ');
-console.log("  '-------'     \\/____o/       ");
+console.log('\n---------------------------------------------------------------------------------');
+console.log('***                         Welcome to SatoshiDice!                           ***');
+console.log('---------------------------------------------------------------------------------');
+console.log('                             .-------.    ______        ');
+console.log('                            /   o   /|   /\\     \\     ');
+console.log('                           /_______/o|  /o \\  o  \\    ');
+console.log('                           | o     | | /   o\\_____\\   ');
+console.log('                           |   o   |o/ \\o   /o    /    ');
+console.log('                           |     o |/   \\ o/  o  /     ');
+console.log("                           '-------'     \\/____o/      ");
+console.log('---------------------------------------------------------------------------------');
+console.log("***                     P2P Gaming with Bitcoin Cash                          ***");
+console.log('---------------------------------------------------------------------------------\n');
 
 if(!coinflip.debug) {
     inquirer.prompt(function() { // 1) Ask the user to specify role (Host or Client)
-        console.log('\n');
         var questions = [];
         if(true)
             questions.push({ 
                             type: "list", 
                             name: "role", 
                             message: "What do you want to do?",
-                            choices: [{ name: 'Host a dice roll (ODD wins)', value: 'host' }, 
-                                        { name:'Join a dice roll (EVEN wins)', value: 'client' }, 
-                                        //{ name: 'Import new private key', value: 'import' }, 
-                                        //{ name: 'Withdraw funds', value: 'withdraw' }
+                            choices: [new inquirer.Separator("Games"),
+                                        { name: 'Play Even-Odd as Host (ODD wins)', value: 'host' }, 
+                                        { name:'Play Even-Odd as Client (EVEN wins)', value: 'client' }, 
+                                        new inquirer.Separator("Tools"),
+                                        { name: 'Import new private key', value: 'import' }, 
+                                        { name: 'Withdraw funds', value: 'withdraw' },
+                                        { name: 'Pre-split coins', value: 'split' }
                                     ],
                         });
         return questions;
     }())
 
     .then(function(answers) {  // 2) if args were not specified specified, then try to load them from disk
-        console.log(answers.role)
         coinflip.role = answers.role;
         var wallet;
         if(coinflip.role == 'host')
