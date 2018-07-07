@@ -56,9 +56,9 @@ module.exports = class CoinFlipHost extends Host {
         console.log("Your secret number (shortened) is: " + Core.readScriptInt32(this.betState.secret));
 
         // Phase 1 -- Send out a bet announcement
-        console.log('\n---------------------------------------------------------------------------------');
-        console.log('|               PHASE 1: Sending coin flip bet announcement...                  |');
-        console.log('---------------------------------------------------------------------------------')
+        console.log('\n-------------------------------------------------------------------------------');
+        console.log('|              PHASE 1: Sending coin flip bet announcement...                 |');
+        console.log('-------------------------------------------------------------------------------')
         
         this.betState.betId = await CoinFlipHost.sendPhase1Message(this.wallet, this.betState.amount, this.betState.secretCommitment);
         if(this.betState.betId.length == 64){
@@ -71,9 +71,9 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 2 -- Wait for a bet client to accept...
-        console.log('\n---------------------------------------------------------------------------------');
-        console.log('|             PHASE 2: Waiting for someone to accept your bet...                |');
-        console.log('---------------------------------------------------------------------------------');
+        console.log('\n-------------------------------------------------------------------------------');
+        console.log('|            PHASE 2: Waiting for someone to accept your bet...               |');
+        console.log('-------------------------------------------------------------------------------');
 
         while(this.betState.phase == 2){
 
@@ -104,24 +104,24 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 3 -- Send Client your Escrow Details and multisig pub key so he can create escrow
-        console.log('\n---------------------------------------------------------------------------------');
-        console.log("|               PHASE 3: Funding the host's side of the bet...                  |");
-        console.log('---------------------------------------------------------------------------------');
+        console.log('\n-------------------------------------------------------------------------------');
+        console.log("|              PHASE 3: Funding the host's side of the bet...                 |");
+        console.log('-------------------------------------------------------------------------------');
         
         let escrowBuf = CoinFlipShared.buildCoinFlipHostEscrowScript(this.wallet.pubkey, this.betState.secretCommitment, this.betState.clientmultisigPubKey);
         this.wallet.utxo = await Core.getUtxoWithRetry(this.wallet.address);
         let escrowTxid = await Core.createEscrow(this.wallet, escrowBuf, this.betState.amount);
         console.log('\nOur escrow address has been funded! \n(txn: ' + escrowTxid);
-        await Utils.sleep(2000); // short wait for BITBOX mempool to sync
+        await Utils.sleep(500); // short wait for BITBOX mempool to sync
 
         let phase3MsgTxId = await CoinFlipHost.sendPhase3Message(this.wallet, this.betState.betId, this.betState.clientTxId, escrowTxid);
         console.log('Message sent to client with our escrow details. \n(msg txn: ' + phase3MsgTxId + ')');
         this.betState.phase = 4;
 
         // Phase 4 -- Wait for Client's Escrow Details
-        console.log('\n---------------------------------------------------------------------------------');
-        console.log('|           PHASE 4: Waiting for client to fund their side of bet...            |')
-        console.log('---------------------------------------------------------------------------------');
+        console.log('\n-------------------------------------------------------------------------------');
+        console.log('|          PHASE 4: Waiting for client to fund their side of bet...           |')
+        console.log('-------------------------------------------------------------------------------');
 
         while(this.betState.phase == 4){
 
@@ -153,9 +153,9 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 5 -- Submit Bet Transaction & try to claim it.
-        console.log('\n---------------------------------------------------------------------------------');
-        console.log('|                    PHASE 5: Submitting Coin flip bet...                       |');
-        console.log('---------------------------------------------------------------------------------');        
+        console.log('\n-------------------------------------------------------------------------------');
+        console.log('|                   PHASE 5: Submitting Coin flip bet...                      |');
+        console.log('-------------------------------------------------------------------------------');        
 
         let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(this.wallet.pubkey, 
                                                                         this.betState.secretCommitment,
@@ -183,9 +183,9 @@ module.exports = class CoinFlipHost extends Host {
         }
 
         // Phase 6 -- Wait for Client's Resignation if we lost.
-        console.log('\n---------------------------------------------------------------------------------');
-        console.log('|                   PHASE 6: Wait for Client WIN or LOSS                        |');
-        console.log('---------------------------------------------------------------------------------');
+        console.log('\n-------------------------------------------------------------------------------');
+        console.log('|                  PHASE 6: Wait for Client WIN or LOSS                       |');
+        console.log('-------------------------------------------------------------------------------');
         
         let p2sh_hash160 = BITBOX.Crypto.hash160(betScriptBuf);
         let scriptPubKey = BITBOX.Script.scriptHash.output.encode(p2sh_hash160);

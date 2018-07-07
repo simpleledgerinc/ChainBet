@@ -16,19 +16,19 @@ coinflip.cli = true;
 // 1) save user specified args to disk
 // TODO LATER
 
-console.log('\n---------------------------------------------------------------------------------');
-console.log('***                         Welcome to SatoshiDice!                           ***');
-console.log('---------------------------------------------------------------------------------');
-console.log('                             .-------.    ______        ');
-console.log('                            /   o   /|   /\\     \\     ');
-console.log('                           /_______/o|  /o \\  o  \\    ');
-console.log('                           | o     | | /   o\\_____\\   ');
-console.log('                           |   o   |o/ \\o   /o    /    ');
-console.log('                           |     o |/   \\ o/  o  /     ');
-console.log("                           '-------'     \\/____o/      ");
-console.log('---------------------------------------------------------------------------------');
-console.log("***                     P2P Gaming with Bitcoin Cash                          ***");
-console.log('---------------------------------------------------------------------------------\n');
+console.log('\n-------------------------------------------------------------------------------');
+console.log('|                        Welcome to Satoshi Dice!                             |');
+console.log('-------------------------------------------------------------------------------');
+console.log('=====                       .-------.    ______                           =====');
+console.log(' ///                       /   o   /|   /\\     \\                           ///');
+console.log(' ///                      /_______/o|  /o \\  o  \\                          ///');
+console.log(' ///                      | o     | | /   o\\_____\\                         ///');
+console.log(' ///                      |   o   |o/ \\o   /o    /                         ///');
+console.log(' ///                      |     o |/   \\ o/  o  /                          ///');
+console.log("=====                     '-------'     \\/____o/                          =====");
+console.log('-------------------------------------------------------------------------------');
+console.log("|                      P2P Gaming with Bitcoin Cash                           |");
+console.log('-------------------------------------------------------------------------------\n');
 
 if(!coinflip.debug) {
     inquirer.prompt(function() { // 1) Ask the user to specify role (Host or Client)

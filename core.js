@@ -41,7 +41,7 @@ module.exports = class Core {
 			i++;
 			if (i > retries)
 				throw new Error("BITBOX.RawTransactions.sendRawTransaction endpoint experienced a problem.")
-			await Utils.sleep(2000);
+			await Utils.sleep(1000);
 		}
 
 		if(result.length != 64)
@@ -60,7 +60,7 @@ module.exports = class Core {
 			if(count > retries)
 				throw new Error("BITBOX.Address.details endpoint experienced a problem");
 
-			await Utils.sleep(2000);
+			await Utils.sleep(1000);
 		}
 
 		return result;
@@ -75,7 +75,7 @@ module.exports = class Core {
 			count++;
 			if(count > retries)
 				throw new Error("BITBOX.Address.utxo endpoint experienced a problem");
-			await Utils.sleep(2000);
+			await Utils.sleep(1000);
 		}
 
 		return result;
