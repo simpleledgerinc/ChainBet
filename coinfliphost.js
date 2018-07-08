@@ -40,7 +40,7 @@ module.exports = class CoinFlipHost extends Host {
         let answer1 = await inquirer.prompt([{
             type: "input", 
             name: "amount", 
-            message: "Enter bet amount to init bet on BCH network (1500-10000): ",
+            message: "Enter bet amount (1500-10000): ",
             validate: 
                 function(input){ 
                     if(parseInt(input)) 
@@ -242,9 +242,9 @@ module.exports = class CoinFlipHost extends Host {
             await Utils.sleep(500);
         }
 
-        console.log('\n---------------------------------------------------------------------------------');
-        console.log('|                       PHASE 7: Claiming Our Winnings                          |');
-        console.log('---------------------------------------------------------------------------------');
+        console.log('\n-------------------------------------------------------------------------------');
+        console.log('|                     PHASE 7: Claiming Our Winnings...                       |');
+        console.log('-------------------------------------------------------------------------------');
         
 
         let winTxnId = await CoinFlipHost.hostClaimWinSecret(this.wallet, this.betState.secret, this.betState.clientSecret, betScriptBuf, betTxId, this.betState.amount);

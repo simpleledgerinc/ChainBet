@@ -1,24 +1,24 @@
 ## Node.js implementation of the Bitcoin Cash ChainBet protocol
 
-This repo contains a node.js implementation of the ChainBet protocol. The specification of the ChainBet protocol is here: [https://github.com/fyookball/ChainBet](https://github.com/fyookball/ChainBet).  An example program (coinflip.js) and a npm package are provided to demonstrate how to use the npm package.
+This repo contains a node.js implementation of the ChainBet protocol. The specification of the ChainBet protocol is here: [https://github.com/fyookball/ChainBet](https://github.com/fyookball/ChainBet).  An example program (dice.js) and a npm package are provided to demonstrate how to use the npm package.
 
-## Coinflip.js Example
+## dice.js Example
 
-The following coinflip.js example shows a simple command-line program which facilitates a trustless p2p coin flip bet on the Bitcoin Cash blockchain using the ChainBet npm package.  Running this example requires that at least one player is already running the program in "client mode" before another player uses "host mode" to announce a coin flip bet wager.
+The following dice.js example shows a simple command-line program which facilitates a trustless p2p dice games using the ChainBet npm package.  Running this example requires that at least one player is already running the program in "client mode" before another player uses "host mode" to announce a coin flip bet wager.
 
  1. install node.js (v8.11.3 or later)
  2. `git clone https://github.com/jcramer/chainbet`
  3. `cd chainbet/examples`
  4. `npm install`
- 5. `node coinflip`
+ 5. `node dice`
 
-### CoinFlip Winner
+### Dice Winner
 
-![CoinFlip Winner](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Winner.png?raw=true)
+![Dice Winner](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Winner.png?raw=true)
 
-### CoinFlip Loser
+### Dice Loser
 
-![CoinFlip Loser](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Loser.png?raw=true)
+![Dice Loser](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Loser.png?raw=true)
 
 ## Npm Package
 
