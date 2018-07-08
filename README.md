@@ -12,11 +12,15 @@ The following dice.js example shows a simple command-line program which facilita
  4. `npm install`
  5. `node dice`
 
-### Dice Winner
+### Main Menu
+
+![Main Menu](https://github.com/jcramer/chainbet/blob/master/examples/images/main_menu.png?raw=true)
+
+### Winner
 
 ![Dice Winner](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Winner.png?raw=true)
 
-### Dice Loser
+### Loser
 
 ![Dice Loser](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Loser.png?raw=true)
 
