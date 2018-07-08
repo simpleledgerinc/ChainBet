@@ -28,13 +28,9 @@ module.exports = class Client {
 	// Phase 4: Bet Participant Funding
 	static encodePhase4(betId, clientEscrowTxId, participantSig1, participantSig2) {
 		
-		// chop off DER byte (first byte) and sighash type (last byte)
-		var sig1 = participantSig1.slice(1, participantSig1.length-1);
-		var sig2 = participantSig2.slice(1, participantSig2.length-1);
-
 		// pad sigs to ensure 70 bytes
-		var sig1 = Utils.padSigAfterDerAndSigHashRemoval(sig1);
-		var sig2 = Utils.padSigAfterDerAndSigHashRemoval(sig2);
+		var sig1 = Utils.padSig(participantSig1);
+		var sig2 = Utils.padSig(participantSig2);
 
 		// combine sigs into a single value for one pushdata
 		var sigs = Buffer.concat([sig1, sig2]);

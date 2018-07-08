@@ -101,11 +101,11 @@ module.exports = class Core {
 		let addrDetails = await Core.getAddressDetailsWithRetry(address);
 		
 		if (addrDetails.unconfirmedBalanceSat <= 0 && addrDetails.balanceSat == 0) {
-			console.log("The address provided has a zero balance... please add funds to this address.");
+			console.log("\nThe address provided has a zero balance... please add funds to this address.");
 			return false;
 		}
 
-		console.log("confirmed balance (sat): " + addrDetails.balanceSat);
+		console.log("\nconfirmed balance (sat): " + addrDetails.balanceSat);
 		console.log("unconfirmed balance (sat): " + addrDetails.unconfirmedBalanceSat);
 		return true;
 
@@ -172,9 +172,9 @@ module.exports = class Core {
 			results.participantP2SHTxId = bufArray[2];
 			let sigs = bufArray[3];
 			// 72 byte Participant Signature 1
-			results.participantSig1 = Buffer.concat([Buffer('30', 'hex'), Utils.unpadSigBeforeDerAndSigHashConcat(sigs.slice(0,70)), Buffer('c1', 'hex') ]);
+			results.participantSig1 = Utils.unpadSig(sigs.slice(0,72));
 			// 72 byte Participant Signature 2
-			results.participantSig2 = Buffer.concat([Buffer('30', 'hex'), Utils.unpadSigBeforeDerAndSigHashConcat(sigs.slice(70)), Buffer('c1', 'hex') ]);
+			results.participantSig2 = Utils.unpadSig(sigs.slice(72));
 
 		// Phase 6 specific fields
 		} else if(phase === 6) {
