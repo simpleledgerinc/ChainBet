@@ -9,49 +9,32 @@ let CoinFlipShared = require('./coinflipshared')
 
 // CoinFlipClient class represents 1 bet's state management
 module.exports = class CoinFlipHost extends Host {
-    constructor(wif, pubkey, address, feed, debug=false){
+    constructor(wif, betAmount, feed, debug=false) {
         super();
-        this.wallet = {};
-        this.wallet.wif = wif;
-        this.wallet.pubkey = pubkey;
-        this.wallet.address = address;
+
+        this.wif = wif;            
+        let ecpair = BITBOX.ECPair.fromWIF(this.wif);
+        this.pubkey = BITBOX.ECPair.toPublicKey(ecpair);
+        this.address = BITBOX.ECPair.toCashAddress(ecpair);
+
+        this.wallet = {
+            wif: this.wif, 
+            pubkey: this.pubkey, 
+            address: this.address
+        }
 
         this.isDebugging = debug;
 
-        this.betState = {};
+        this.betState = { amount: betAmount };
         this.betState.phase = 1;
         this.complete = false;
 
-        // set shared chainfeed listener (each client will periodically check for messages)
-        // in future can set filter within the feed to improve performance
         this.feed = feed;
     }
 
     async run(){
 
-        // check account balance then run bet
-        if(!(await Core.checkSufficientBalance(this.wallet.address))) {
-            this.complete = true;
-            return;
-        } 
-
-        // Phase 0) Prompt user for bet amount & secret commitment to initiate bet.
-        console.log('\n');
-        let answer1 = await inquirer.prompt([{
-            type: "input", 
-            name: "amount", 
-            message: "Enter bet amount (1500-10000): ",
-            validate: 
-                function(input){ 
-                    if(parseInt(input)) 
-                        if(parseInt(input) >= 1500 && parseInt(input) <= 10000) return true; 
-                    return false; 
-                }
-            }]);
-
-        this.betState.amount = parseInt(answer1.amount);
-
-        this.betState.secret = Core.mineForSecretNumber();
+        this.betState.secret = Core.generateSecretNumber();
         this.betState.secretCommitment = BITBOX.Crypto.hash160(this.betState.secret);
         console.log("Your secret number (shortened) is: " + Core.readScriptInt32(this.betState.secret));
 
@@ -100,7 +83,7 @@ module.exports = class CoinFlipHost extends Host {
 
                 this.betState.phase = 3;
             }
-            await Utils.sleep(500);
+            await Utils.sleep(250);
         }
 
         // Phase 3 -- Send Client your Escrow Details and multisig pub key so he can create escrow
@@ -112,7 +95,7 @@ module.exports = class CoinFlipHost extends Host {
         this.wallet.utxo = await Core.getUtxoWithRetry(this.wallet.address);
         let escrowTxid = await Core.createEscrow(this.wallet, escrowBuf, this.betState.amount);
         console.log('\nOur escrow address has been funded! \n(txn: ' + escrowTxid);
-        await Utils.sleep(500); // short wait for BITBOX mempool to sync
+        await Utils.sleep(250); // short wait for BITBOX mempool to sync
 
         let phase3MsgTxId = await CoinFlipHost.sendPhase3Message(this.wallet, this.betState.betId, this.betState.clientTxId, escrowTxid);
         console.log('Message sent to client with our escrow details. \n(msg txn: ' + phase3MsgTxId + ')');
@@ -149,7 +132,7 @@ module.exports = class CoinFlipHost extends Host {
 
                 this.betState.phase = 5;
             }
-            await Utils.sleep(500);
+            await Utils.sleep(250);
         }
 
         // Phase 5 -- Submit Bet Transaction & try to claim it.
@@ -157,12 +140,12 @@ module.exports = class CoinFlipHost extends Host {
         console.log('|                   PHASE 5: Submitting Coin flip bet...                      |');
         console.log('-------------------------------------------------------------------------------');        
 
-        let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(this.wallet.pubkey, 
+        let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(this.pubkey, 
                                                                         this.betState.secretCommitment,
                                                                         this.betState.clientmultisigPubKey, 
                                                                         this.betState.clientCommitment);
 
-        let clientEscrowBuf = CoinFlipShared.buildCoinFlipClientEscrowScript(this.wallet.pubkey, 
+        let clientEscrowBuf = CoinFlipShared.buildCoinFlipClientEscrowScript(this.pubkey, 
                                                                             this.betState.clientmultisigPubKey);
 
         let betTxId = await CoinFlipHost.redeemEscrowToMakeBet(this.wallet, 
@@ -239,7 +222,7 @@ module.exports = class CoinFlipHost extends Host {
                 return;
             }
             
-            await Utils.sleep(500);
+            await Utils.sleep(250);
         }
 
         console.log('\n-------------------------------------------------------------------------------');

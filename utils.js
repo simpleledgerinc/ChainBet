@@ -104,65 +104,13 @@ module.exports = class Utils {
     static sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
 	}
-	
-	static async sweepToAddress(wallet, destinationAddress) {
-		// create a new transaction with all UTXOs from each Private Key sent destination
 
-		wallet.forEach(async (wif, index) => {
-
-			let ecpair = BITBOX.ECPair.fromWIF(wif.wif);
-			let address = BITBOX.ECPair.toCashAddress(ecpair);
-			wif.utxo = await Core.getUtxoWithRetry(address);
-
-			//return new Promise( (resolve, reject) => {
-			let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
-			let hashType = transactionBuilder.hashTypes.SIGHASH_ALL;
-	
-			let totalUtxo = 0;
-			wif.utxo.forEach((item, index) => { 
-				transactionBuilder.addInput(item.txid, item.vout); 
-				totalUtxo += item.satoshis;
-			});
-
-			if(totalUtxo > 0){
-
-				let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: wif.utxo.length });
-				let satoshisAfterFee = totalUtxo - byteCount;
-		
-				// let p2sh_hash160 = BITBOX.Crypto.hash160(script);
-				// let p2sh_hash160_hex = p2sh_hash160.toString('hex');
-				// let scriptPubKey = BITBOX.Script.scriptHash.output.encode(p2sh_hash160);
-		
-				//let escrowAddress = BITBOX.Address.toLegacyAddress(BITBOX.Address.fromOutputScript(scriptPubKey));
-				//let changeAddress = BITBOX.Address.toLegacyAddress(destinationAddress);
-				// console.log("escrow address: " + address);
-				// console.log("change satoshi: " + satoshisAfterFee);
-				// console.log("change bet amount: " + betAmount);
-		
-				//transactionBuilder.addOutput(escrowAddress, betAmount);
-				transactionBuilder.addOutput(destinationAddress, satoshisAfterFee);
-				//console.log("Added escrow outputs...");
-		
-				//let key = BITBOX.ECPair.fromWIF(wallet.wif);
-		
-				let redeemScript;
-				wif.utxo.forEach((item, index) => {
-					transactionBuilder.sign(index, ecpair, redeemScript, hashType, item.satoshis);
-				});
-				//console.log("signed escrow inputs...");
-		
-				let hex = transactionBuilder.build().toHex();
-				//console.log("built escrow...");
-		
-				let txId = await Core.sendRawTransaction(hex);
-				console.log("Sent " + totalUtxo + " from " + address + "to " + destinationAddress);
-				console.log("(txn: " + txId);
-			}
-			else {
-				console.log("No funds at " + address);
-			}
-		});
+	static async asyncForEach(array, callback) {
+		for (let index = 0; index < array.length; index++) {
+		  await callback(array[index], index, array)
+		}
 	}
+	
 
 	// static getVanityWif(vanityString) {
 

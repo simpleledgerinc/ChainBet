@@ -8,8 +8,9 @@
             "type": "node",
             "request": "launch",
             "name": "Launch dice.js with args",
-            "program": "${workspaceFolder}/examples/dice.js",
-            "args": [ "-s", "client", "-d", "1"]
+            "program": "${workspaceFolder}/examples/dice/dice.js",
+            "cwd": "${workspaceFolder}/examples/dice",
+            "args": [ "-m", "client", "-d", "1"]
         },
         {
             "type": "node",

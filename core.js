@@ -1,12 +1,12 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 
-let Utils = require('./utils')
+let Utils = require('./utils');
 
 module.exports = class Core {
 	
 	// Method to get Script 32-bit integer (little-endian signed magnitude representation)
-	static readScriptInt32(buffer){
+	static readScriptInt32(buffer) {
 		var number;
 		if(buffer.readUInt32LE() > 2147483647)
 			number = -1 * (buffer.readUInt32LE() - 2147483648);
@@ -16,14 +16,14 @@ module.exports = class Core {
 	}
 
 	// Method to check whether or not a secret value is valid
-	static secretIsValid(buffer){
+	static secretIsValid(buffer) {
 		var number = this.readScriptInt32(buffer);
 		if(number > 1073741823 || number < -1073741823)
 			return false;
 		return true;
 	}
 
-	static mineForSecretNumber(){
+	static generateSecretNumber() {
 		var secret = BITBOX.Crypto.randomBytes(32);
 		while(!this.secretIsValid(secret)){
 			secret = BITBOX.Crypto.randomBytes(32);
@@ -41,7 +41,7 @@ module.exports = class Core {
 			i++;
 			if (i > retries)
 				throw new Error("BITBOX.RawTransactions.sendRawTransaction endpoint experienced a problem.")
-			await Utils.sleep(1000);
+			await Utils.sleep(250);
 		}
 
 		if(result.length != 64)
@@ -60,7 +60,7 @@ module.exports = class Core {
 			if(count > retries)
 				throw new Error("BITBOX.Address.details endpoint experienced a problem");
 
-			await Utils.sleep(1000);
+			await Utils.sleep(250);
 		}
 
 		return result;
@@ -75,7 +75,7 @@ module.exports = class Core {
 			count++;
 			if(count > retries)
 				throw new Error("BITBOX.Address.utxo endpoint experienced a problem");
-			await Utils.sleep(1000);
+			await Utils.sleep(250);
 		}
 
 		return result;
@@ -97,25 +97,7 @@ module.exports = class Core {
 		return (betAmount * 2 ) - byteCount - 750;
 	}
 
-	static async checkSufficientBalance(address) {
-		let addrDetails = await Core.getAddressDetailsWithRetry(address);
-		
-		if (addrDetails.unconfirmedBalanceSat <= 0 && addrDetails.balanceSat == 0) {
-			console.log("\nThe address provided has a zero balance... please add funds to this address.");
-			return false;
-		}
 
-		console.log("\nconfirmed balance (sat): " + addrDetails.balanceSat);
-		console.log("unconfirmed balance (sat): " + addrDetails.unconfirmedBalanceSat);
-		return true;
-
-	}
-	
-	static async getConfirmedAndUnconfirmedAddressBalance(address){
-		let addrDetails = await Core.getAddressDetailsWithRetry(address);
-		let total = addrDetails.balanceSat + addrDetails.unconfirmedBalanceSat;
-		return total;
-	}
 
 	static decodePhaseData(bufArray, networkByte=0x00) {
 

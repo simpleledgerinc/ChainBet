@@ -2,19 +2,26 @@ let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 var inquirer = require('inquirer');
 
+let Core = require('./core');
 let Utils = require('./utils');
 let Client = require('./client');
-let Core = require('./core');
-let CoinFlipShared = require('./coinflipshared')
+let Wallet = require('./wallet');
+let CoinFlipShared = require('./coinflipshared');
 
-// CoinFlipClient class represents 1 bet's state management
 module.exports = class CoinFlipClient extends Client {
-    constructor(wif, pubkey, address, feed, debug=false){ //, cliLock){
+    constructor(wif, feed, debug=false){
         super();
-        this.wallet = {};
-        this.wallet.wif = wif;
-        this.wallet.pubkey = pubkey;
-        this.wallet.address = address;
+
+        this.wif = wif;            
+        let ecpair = BITBOX.ECPair.fromWIF(this.wif);
+        this.pubkey = BITBOX.ECPair.toPublicKey(ecpair);
+        this.address = BITBOX.ECPair.toCashAddress(ecpair);
+
+        this.wallet = {
+            wif: this.wif, 
+            pubkey: this.pubkey, 
+            address: this.address
+        }
 
         this.isDebugging = debug;
 
@@ -22,18 +29,10 @@ module.exports = class CoinFlipClient extends Client {
         this.betState.phase = 1;
         this.complete = false;
 
-        // set shared chainfeed listener (each client will periodically check for messages)
-        // in future can set filter within the feed to improve performance
         this.feed = feed;
     }
 
-    async run(){
-
-        // check account balance then run bet
-        if(!(await Core.checkSufficientBalance(this.wallet.address))) {
-            this.complete = true;
-            return;
-        } 
+    async run() {
 
         // Phase 1 -- keep checking for a host to bet with
         console.log('\n-------------------------------------------------------------------------------');
@@ -83,13 +82,13 @@ module.exports = class CoinFlipClient extends Client {
                 }
             }
 
-            await Utils.sleep(500);
+            await Utils.sleep(250);
         }
 
         // Phase 2 -- allow user to choose a secret number then send host our acceptance message
         //let answer = await inquirer.prompt([{type: "input", name: "secret", message: "Choose a secret number: "}]);
         //this.betState.secret = Utils.secret_2_buf(parseInt(answer.secret)); 
-        this.betState.secret = Core.mineForSecretNumber(); //Buffer("c667c14e218cf530c405e2d50def250b0c031f69593e95171048c772ad0e1bce",'hex');
+        this.betState.secret = Core.generateSecretNumber(); //Buffer("c667c14e218cf530c405e2d50def250b0c031f69593e95171048c772ad0e1bce",'hex');
         this.betState.secretCommitment = BITBOX.Crypto.hash160(this.betState.secret);
         console.log("Your secret number is: " + Core.readScriptInt32(this.betState.secret));
 
@@ -97,7 +96,7 @@ module.exports = class CoinFlipClient extends Client {
         console.log('|           PHASE 2: Accepting bet & sending our secret commitment...         |');
         console.log('-------------------------------------------------------------------------------');
 
-        this.betState.clientTxId = await CoinFlipClient.sendPhase2Message(this.wallet, this.betState.betId, this.wallet.pubkey, this.betState.secretCommitment);
+        this.betState.clientTxId = await CoinFlipClient.sendPhase2Message(this.wallet, this.betState.betId, this.pubkey, this.betState.secretCommitment);
         console.log("\nMessage to accept the bet sent. \n(msg txn: " + this.betState.clientTxId + ")")
         this.betState.phase = 3;
 
@@ -133,7 +132,7 @@ module.exports = class CoinFlipClient extends Client {
 
                 this.betState.phase = 4;
             }
-            await Utils.sleep(500);
+            await Utils.sleep(250);
         }
 
         // Phase 4 -- Send Host your Escrow Details
@@ -141,20 +140,20 @@ module.exports = class CoinFlipClient extends Client {
         console.log('|                   PHASE 4: Funding our side of the bet...                   |');
         console.log('-------------------------------------------------------------------------------');
 
-        let escrowBuf = CoinFlipShared.buildCoinFlipClientEscrowScript(this.betState.hostMultisigPubKey, this.wallet.pubkey);
+        let escrowBuf = CoinFlipShared.buildCoinFlipClientEscrowScript(this.betState.hostMultisigPubKey, this.pubkey);
         //console.log(BITBOX.Script.toASM(escrowBuf));
-        this.wallet.utxo = await Core.getUtxoWithRetry(this.wallet.address);
+        this.wallet.utxo = await Core.getUtxoWithRetry(this.address);
         let escrowTxid = await Core.createEscrow(this.wallet, escrowBuf, this.betState.amount);
         console.log('\nOur escrow address has been funded! \n(txn: ' + escrowTxid);
-        await Utils.sleep(500); // need to wait for BITBOX mempool to sync
+        await Utils.sleep(250); // need to wait for BITBOX mempool to sync
 
         console.log('Sending our escrow details and signatures to host...');
-        let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(this.betState.hostMultisigPubKey, this.betState.hostCommitment, this.wallet.pubkey, this.betState.secretCommitment);
+        let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(this.betState.hostMultisigPubKey, this.betState.hostCommitment, this.pubkey, this.betState.secretCommitment);
         
         // build bob's signatures
         let bobEscrowSig = CoinFlipShared.createEscrowSignature(this.wallet, escrowTxid, escrowBuf, this.betState.amount, betScriptBuf);
         
-        let hostEscrowBuf = CoinFlipShared.buildCoinFlipHostEscrowScript(this.betState.hostMultisigPubKey, this.betState.hostCommitment, this.wallet.pubkey);
+        let hostEscrowBuf = CoinFlipShared.buildCoinFlipHostEscrowScript(this.betState.hostMultisigPubKey, this.betState.hostCommitment, this.pubkey);
         let aliceEscrowSig = CoinFlipShared.createEscrowSignature(this.wallet, this.betState.hostP2SHTxId, hostEscrowBuf, this.betState.amount, betScriptBuf);
 
         // prepare to send Phase 4 OP_RETURN
@@ -223,7 +222,7 @@ module.exports = class CoinFlipClient extends Client {
                 this.betState.phase = 6;
             }
             
-            await Utils.sleep(500);
+            await Utils.sleep(250);
         }
 
         if(this.betState.phase == 6) {
@@ -275,7 +274,7 @@ module.exports = class CoinFlipClient extends Client {
 
         let purseAmount = Core.purseAmount(betAmount);
 
-        let clientKey = BITBOX.ECPair.fromWIF(wallet.wif)
+        let clientKey = BITBOX.ECPair.fromWIF(wif)
         let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
         let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
@@ -283,7 +282,7 @@ module.exports = class CoinFlipClient extends Client {
         let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
         let satoshisAfterFee = purseAmount - byteCount - betScript.length - 142;
         transactionBuilder.addInput(betTxId, 0)
-        transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
+        transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(utxo[0].cashAddress), satoshisAfterFee);
 
         let tx = transactionBuilder.transaction.buildIncomplete();
 

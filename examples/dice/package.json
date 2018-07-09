@@ -1,0 +1,16 @@
+{
+  "name": "dice",
+  "version": "0.0.1",
+  "description": "Example program utilizing ChainBet protocol",
+  "main": "dice.js",
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chainbet": "^0.0.12",
+    "commander": "^2.15.1",
+    "bitbox-cli": "^1.1.2",
+    "inquirer": "^6.0.0",
+    "jsonfile": "^4.0.0"
+  },
+  "devDependencies": {}
+}

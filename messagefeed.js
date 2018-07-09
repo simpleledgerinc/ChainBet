@@ -25,7 +25,7 @@ module.exports = class MessageFeed {
     async checkConnection(){
         while(!this.feedState.connected){
             console.log("[MessageFeed] Connecting...")
-            await utils.sleep(500);
+            await utils.sleep(1000);
         }
         return
     }
