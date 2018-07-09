@@ -90,14 +90,17 @@ async function main() {
             // select appropriate private key for bet
             try {
                 var wif = await chainbet.Wallet.selectViableWIF(wallet);
+
             } catch(e) {
                 console.log("\nNo viable addresses to use, please add funds or wait for 1 confirmation.");
             }
 
-            var bet = new chainbet.CoinFlipClient(wif, chainfeed, context.debug);
-            bet.run();
-            while (!bet.complete) {
-                await chainbet.Utils.sleep(250);
+            if(wif != undefined){
+                var bet = new chainbet.CoinFlipClient(wif, chainfeed, context.debug);
+                bet.run();
+                while (!bet.complete) {
+                    await chainbet.Utils.sleep(250);
+                }
             }
         }
         else if (selection.mode == 'withdraw') {

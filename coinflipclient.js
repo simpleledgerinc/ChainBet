@@ -274,7 +274,7 @@ module.exports = class CoinFlipClient extends Client {
 
         let purseAmount = Core.purseAmount(betAmount);
 
-        let clientKey = BITBOX.ECPair.fromWIF(wif)
+        let clientKey = BITBOX.ECPair.fromWIF(wallet.wif)
         let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
         let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
