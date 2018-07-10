@@ -200,86 +200,92 @@ export class Core {
 
 		// grab the common fields
 		//var results: PhaseData;
-		let version = bufArray[0].slice(0,1).readUInt8(0);
-		let betType = bufArray[0].slice(1,2).readUInt8(0);
-		let phase = bufArray[0].slice(2,3).readUInt8(0);
-		//results = { betType: betType, version: version, phase: phase };
-
-		// Phase 1 specific fields
-		if(phase === 1) {
-			let phase1Result: Phase1Data = { 
-				betType: betType, 
-				version: version, 
-				phase: phase,
-				amount: parseInt(bufArray[1].toString('hex'), 16),
-				hostCommitment: bufArray[2]
-			};
-
-			// Target address (as hash160 without network or sha256)
-			if (bufArray.length > 3){ 
-				var pkHash160 = bufArray[3];
-				phase1Result.address = Utils.hash160_2_cashAddr(pkHash160, networkByte);
+		try 
+		{
+			let version = bufArray[0].slice(0,1).readUInt8(0);
+			let betType = bufArray[0].slice(1,2).readUInt8(0);
+			let phase = bufArray[0].slice(2,3).readUInt8(0);
+			//results = { betType: betType, version: version, phase: phase };
+	
+			// Phase 1 specific fields
+			if(phase === 1) {
+				let phase1Result: Phase1Data = { 
+					betType: betType, 
+					version: version, 
+					phase: phase,
+					amount: parseInt(bufArray[1].toString('hex'), 16),
+					hostCommitment: bufArray[2]
+				};
+	
+				// Target address (as hash160 without network or sha256)
+				if (bufArray.length > 3){ 
+					var pkHash160 = bufArray[3];
+					phase1Result.address = Utils.hash160_2_cashAddr(pkHash160, networkByte);
+				}
+	
+				result = phase1Result;
+	
+			// Phase 2 specific fields
+			} else if(phase === 2) {
+				let phase2Result: Phase2Data = {
+					betType: betType, 
+					version: version, 
+					phase: phase,
+					betTxId: bufArray[1],
+					multisigPubKey: bufArray[2],
+					secretCommitment: bufArray[3]
+				};
+	
+				result = phase2Result;
+	
+			// Phase 3  specific fields
+			} else if(phase === 3) {
+	
+				let phase3Result: Phase3Data = {
+					betType: betType, 
+					version: version, 
+					phase: phase,
+					betTxId: bufArray[1],
+					participantOpReturnTxId: bufArray[2],
+					hostP2SHTxId: bufArray[3],
+					hostMultisigPubKey: bufArray[4]
+				};
+	
+				result = phase3Result;
+	
+			//Phase 4 specific fields
+			} else if(phase === 4) {
+	
+				let phase4Result: Phase4Data = {
+					betType: betType, 
+					version: version, 
+					phase: phase,
+					betTxId: bufArray[1],
+					participantP2SHTxId: bufArray[2],
+					participantSig1: bufArray[3],
+					participantSig2: bufArray[4]
+				}
+	
+				result = phase4Result;
+	
+			// Phase 6 specific fields
+			} else if(phase === 6) {
+				let phase6Result: Phase6Data = {
+					betType: betType, 
+					version: version, 
+					phase: phase,
+					betTxId: bufArray[1],
+					secretValue: bufArray[2]
+				}
+	
+				result = phase6Result;
 			}
-
-			result = phase1Result;
-
-		// Phase 2 specific fields
-		} else if(phase === 2) {
-			let phase2Result: Phase2Data = {
-				betType: betType, 
-				version: version, 
-				phase: phase,
-				betTxId: bufArray[1],
-				multisigPubKey: bufArray[2],
-				secretCommitment: bufArray[3]
-			};
-
-			result = phase2Result;
-
-		// Phase 3  specific fields
-		} else if(phase === 3) {
-
-			let phase3Result: Phase3Data = {
-				betType: betType, 
-				version: version, 
-				phase: phase,
-				betTxId: bufArray[1],
-				participantOpReturnTxId: bufArray[2],
-				hostP2SHTxId: bufArray[3],
-				hostMultisigPubKey: bufArray[4]
-			};
-
-			result = phase3Result;
-
-		//Phase 4 specific fields
-		} else if(phase === 4) {
-
-			let phase4Result: Phase4Data = {
-				betType: betType, 
-				version: version, 
-				phase: phase,
-				betTxId: bufArray[1],
-				participantP2SHTxId: bufArray[2],
-				participantSig1: bufArray[3],
-				participantSig2: bufArray[4]
+			else { 
+				throw new Error("Phase not detected during decoding bet message data.")
 			}
-
-			result = phase4Result;
-
-		// Phase 6 specific fields
-		} else if(phase === 6) {
-			let phase6Result: Phase6Data = {
-				betType: betType, 
-				version: version, 
-				phase: phase,
-				betTxId: bufArray[1],
-				secretValue: bufArray[2]
-			}
-
-			result = phase6Result;
 		}
-		else { 
-			throw new Error("Phase not detected during decoding bet message data.")
+		catch(e){
+			throw new Error("Unable to decode OP_RETURN message with same protocol identifier.")
 		}
 
 		return result;
