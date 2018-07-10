@@ -2,7 +2,8 @@
   "name": "chainbet",
   "version": "0.0.14",
   "description": "Methods for the ChainBet protocol",
-  "main": "lib/chainbet.js",
+  "main": "./lib/chainbet.js",
+  "types": "./lib/chainbet.d.ts",
   "scripts": {
     "build": "tsc",
     "postbuild": "cp -R node_modules lib/node_modules",
