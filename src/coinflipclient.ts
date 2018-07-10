@@ -145,7 +145,7 @@ export class CoinFlipClient extends Client {
         this.wallet.utxo = await Core.getUtxoWithRetry(<string> this.wallet.address);
         let escrowTxid = await Core.createEscrow(this.wallet, escrowBuf, <number> this.betState.amount);
         console.log('\nOur escrow address has been funded! \n(txn: ' + escrowTxid);
-        await Utils.sleep(250); // need to wait for BITBOX mempool to sync
+        await Utils.sleep(500); // need to wait for BITBOX mempool to sync
 
         console.log('Sending our escrow details and signatures to host...');
         let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(<Buffer> this.betState.hostMultisigPubKey, <Buffer> this.betState.hostCommitment, this.wallet.pubkey, <Buffer> this.betState.secretCommitment);

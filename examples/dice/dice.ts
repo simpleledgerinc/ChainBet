@@ -3,16 +3,15 @@ import * as chainbet from 'chainbet';
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 
-let fs = require('fs');
+import * as fs from 'fs';
 let context = require('commander');
-let inquirer = require('inquirer');
-let jsonfile = require('jsonfile');
+import * as inquirer from 'inquirer';
+import * as jsonfile from 'jsonfile';
 
-context
-    .version('0.0.13')
-    .option('-m, --mode [mode]', 'set program mode to bypass initial prompt')
-    .option('-d, --debug [debug]', 'set debugger support (skips user prompts with default values)')
-    .parse(process.argv);
+context.version('0.0.13')
+        .option('-m, --mode [mode]', 'set program mode to bypass initial prompt')
+        .option('-d, --debug [debug]', 'set debugger support (skips user prompts with default values)')
+        .parse(process.argv);
     
 context.debug = (context.debug == "1" ? true : false);
 
@@ -67,7 +66,7 @@ async function main() {
                 var betAmount: number = 1500;
                 if(!context.debug){
                     console.log('\n');
-                    let answer = await inquirer.prompt([{
+                    let answer: any = await inquirer.prompt([{
                         type: "input", 
                         name: "amount", 
                         message: "Enter bet amount (1500-10000): ",
@@ -108,7 +107,7 @@ async function main() {
         }
         else if (selection.mode == 'withdraw') {
             console.log("withdrawing funds...");
-            let answer = await inquirer.prompt([{
+            let answer: any = await inquirer.prompt([{
                 type: "input", 
                 name: "address", 
                 message: "Enter a withdraw address: ",

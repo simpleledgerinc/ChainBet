@@ -45,23 +45,25 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var chainbet = __importStar(require("chainbet"));
 var BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 var BITBOX = new BITBOXCli();
-var fs = require('fs');
+var fs = __importStar(require("fs"));
+//import * as context from 'commander';
 var context = require('commander');
-var inquirer = require('inquirer');
-var jsonfile = require('jsonfile');
-context
-    .version('0.0.13')
+var inquirer = __importStar(require("inquirer"));
+//let inquirer = require('inquirer');
+var jsonfile = __importStar(require("jsonfile"));
+//let jsonfile = require('jsonfile');
+context.version('0.0.13')
     .option('-m, --mode [mode]', 'set program mode to bypass initial prompt')
     .option('-d, --debug [debug]', 'set debugger support (skips user prompts with default values)')
     .parse(process.argv);
 context.debug = (context.debug == "1" ? true : false);
 function main() {
     return __awaiter(this, void 0, void 0, function () {
-        var wallet, selection, wif, wif, chainfeed, wif, e_1, answer, betAmount, bet, wif, e_2, bet, answer;
+        var wallet, selection, wif, wif, chainfeed, wif, e_1, betAmount, answer, bet, wif, e_2, bet, answer;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!true) return [3 /*break*/, 25];
+                    if (!true) return [3 /*break*/, 26];
                     return [4 /*yield*/, promptMainMenu()];
                 case 1:
                     selection = _a.sent();
@@ -87,7 +89,7 @@ function main() {
                 case 2:
                     _a.sent();
                     wif = "";
-                    if (!(selection.mode == 'host')) return [3 /*break*/, 11];
+                    if (!(selection.mode == 'host')) return [3 /*break*/, 12];
                     _a.label = 3;
                 case 3:
                     _a.trys.push([3, 5, , 6]);
@@ -100,8 +102,9 @@ function main() {
                     console.log("\nNo viable addresses to use, please add funds or wait for 1 confirmation.");
                     return [3 /*break*/, 6];
                 case 6:
-                    if (!(wif != "")) return [3 /*break*/, 10];
-                    // Phase 0) Prompt user for bet amount & secret commitment to initiate bet.
+                    if (!(wif != "")) return [3 /*break*/, 11];
+                    betAmount = 1500;
+                    if (!!context.debug) return [3 /*break*/, 8];
                     console.log('\n');
                     return [4 /*yield*/, inquirer.prompt([{
                                 type: "input",
@@ -117,43 +120,45 @@ function main() {
                 case 7:
                     answer = _a.sent();
                     betAmount = parseInt(answer.amount);
-                    bet = new chainbet.CoinFlipHost(wif, betAmount, chainfeed);
-                    bet.run();
                     _a.label = 8;
                 case 8:
-                    if (!!bet.complete) return [3 /*break*/, 10];
-                    return [4 /*yield*/, chainbet.Utils.sleep(250)];
+                    bet = new chainbet.CoinFlipHost(wif, betAmount, chainfeed);
+                    bet.run();
+                    _a.label = 9;
                 case 9:
+                    if (!!bet.complete) return [3 /*break*/, 11];
+                    return [4 /*yield*/, chainbet.Utils.sleep(250)];
+                case 10:
                     _a.sent();
-                    return [3 /*break*/, 8];
-                case 10: return [3 /*break*/, 24];
-                case 11:
-                    if (!(selection.mode == 'client')) return [3 /*break*/, 19];
-                    _a.label = 12;
+                    return [3 /*break*/, 9];
+                case 11: return [3 /*break*/, 25];
                 case 12:
-                    _a.trys.push([12, 14, , 15]);
-                    return [4 /*yield*/, chainbet.Wallet.selectViableWIF(wallet)];
+                    if (!(selection.mode == 'client')) return [3 /*break*/, 20];
+                    _a.label = 13;
                 case 13:
-                    wif = _a.sent();
-                    return [3 /*break*/, 15];
+                    _a.trys.push([13, 15, , 16]);
+                    return [4 /*yield*/, chainbet.Wallet.selectViableWIF(wallet)];
                 case 14:
+                    wif = _a.sent();
+                    return [3 /*break*/, 16];
+                case 15:
                     e_2 = _a.sent();
                     console.log("\nNo viable addresses to use, please add funds or wait for 1 confirmation.");
-                    return [3 /*break*/, 15];
-                case 15:
-                    if (!(wif != "")) return [3 /*break*/, 18];
+                    return [3 /*break*/, 16];
+                case 16:
+                    if (!(wif != "")) return [3 /*break*/, 19];
                     bet = new chainbet.CoinFlipClient(wif, chainfeed, context.debug);
                     bet.run();
-                    _a.label = 16;
-                case 16:
-                    if (!!bet.complete) return [3 /*break*/, 18];
-                    return [4 /*yield*/, chainbet.Utils.sleep(250)];
+                    _a.label = 17;
                 case 17:
+                    if (!!bet.complete) return [3 /*break*/, 19];
+                    return [4 /*yield*/, chainbet.Utils.sleep(250)];
+                case 18:
                     _a.sent();
-                    return [3 /*break*/, 16];
-                case 18: return [3 /*break*/, 24];
-                case 19:
-                    if (!(selection.mode == 'withdraw')) return [3 /*break*/, 22];
+                    return [3 /*break*/, 17];
+                case 19: return [3 /*break*/, 25];
+                case 20:
+                    if (!(selection.mode == 'withdraw')) return [3 /*break*/, 23];
                     console.log("withdrawing funds...");
                     return [4 /*yield*/, inquirer.prompt([{
                                 type: "input",
@@ -165,20 +170,20 @@ function main() {
                                     return false;
                                 }
                             }])];
-                case 20:
+                case 21:
                     answer = _a.sent();
                     return [4 /*yield*/, chainbet.Wallet.sweepToAddress(wallet, answer.address)];
-                case 21:
-                    _a.sent();
-                    return [3 /*break*/, 24];
                 case 22:
-                    if (!(selection.mode == 'list')) return [3 /*break*/, 24];
-                    return [4 /*yield*/, chainbet.Wallet.listAddressDetails(wallet)];
-                case 23:
                     _a.sent();
-                    _a.label = 24;
-                case 24: return [3 /*break*/, 0];
-                case 25:
+                    return [3 /*break*/, 25];
+                case 23:
+                    if (!(selection.mode == 'list')) return [3 /*break*/, 25];
+                    return [4 /*yield*/, chainbet.Wallet.listAddressDetails(wallet)];
+                case 24:
+                    _a.sent();
+                    _a.label = 25;
+                case 25: return [3 /*break*/, 0];
+                case 26:
                     console.log("\nThanks for visiting Satoshi's Dice!");
                     process.exit();
                     return [2 /*return*/];
