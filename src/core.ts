@@ -1,42 +1,131 @@
-let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-let BITBOX = new BITBOXCli();
+var BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
+var BITBOX = new BITBOXCli();
 
-let Utils = require('./utils');
+let bip68 = require('bip68');
 
-module.exports = class Core {
+import { Utils } from './utils';
+
+export interface WalletKey {
+    wif: string,
+    pubkey: Buffer,
+    address: string,
+    utxo?: any
+}
+
+export interface BetState {
+    phase: number,
+    amount?: number,
+    hostCommitment?: Buffer, 
+    betId?: string,
+    secret?: Buffer,
+    secretCommitment?: Buffer,
+    clientTxId?: string,
+    hostMultisigPubKey?: Buffer,
+	hostP2SHTxId?: string,
+
+	// host only side
+	clientmultisigPubKey?: Buffer,
+	clientCommitment?: Buffer,
+	clientP2SHTxId?: string,
+	participantSig1?: Buffer,
+	participantSig2?: Buffer,
+	clientSecret?: Buffer,
+	
+}
+
+export interface PhaseData {
+	betType: number, 
+	version: number, 
+	phase: number,
+	op_return_txnId?: string
+}
+
+// Phase 1 - Host Advertisement
+export interface Phase1Data extends PhaseData {
+	// amount to bet
+	amount: number,
+	// 20 byte host's secret hash
+	hostCommitment: Buffer, 
+	// optional target client address
+	address?: string
+}
+
+// Phase 2 - Client Accepts Host's offer
+export interface Phase2Data extends PhaseData {
+	// 32 byte Bet Txn Id
+	betTxId: Buffer,
+	// 33 byte public key
+	multisigPubKey: Buffer, 
+	// 20 byte secret hash
+	secretCommitment: Buffer, 
+}
+
+// Phase 3 - Host Acknowledges client and funds escrow
+export interface Phase3Data extends PhaseData { 
+	// 32 byte Bet Txn Id
+	betTxId: Buffer,
+	// 32 byte Participant Txn Id
+	participantOpReturnTxId: Buffer,
+	// 32 byte Host P2SH txid
+	hostP2SHTxId: Buffer,
+	// 33 byte Host (Alice) multsig pubkey
+	hostMultisigPubKey: Buffer
+}
+
+// Phase 4 - Client funds escrow
+export interface Phase4Data extends PhaseData { 
+	// 32 byte Bet Txn Id
+	betTxId: Buffer,
+	// 32 byte Participant Txn Id
+	participantP2SHTxId: Buffer,
+	// 71-72 byte Participant Signature 1
+	participantSig1: Buffer,
+	// 71-72 byte Participant Signature 2
+	participantSig2: Buffer
+}
+
+// Phase 6 - Client sends resignation if loses.
+export interface Phase6Data extends PhaseData { 
+	// 32 byte Bet Txn Id
+	betTxId: Buffer,
+	// 32 byte Secret Value
+	secretValue: Buffer
+}
+
+export class Core {
 	
 	// Method to get Script 32-bit integer (little-endian signed magnitude representation)
-	static readScriptInt32(buffer) {
-		var number;
-		if(buffer.readUInt32LE() > 2147483647)
-			number = -1 * (buffer.readUInt32LE() - 2147483648);
+	static readScriptInt32(buffer: Buffer): number {
+		var number: number;
+		if(buffer.readUInt32LE(0) > 2147483647)
+			number = -1 * (buffer.readUInt32LE(0) - 2147483648);
 		else
-			number = buffer.readUInt32LE();
+			number = buffer.readUInt32LE(0);
 		return number; 
 	}
 
 	// Method to check whether or not a secret value is valid
-	static secretIsValid(buffer) {
+	static secretIsValid(buffer: Buffer): boolean {
 		var number = this.readScriptInt32(buffer);
 		if(number > 1073741823 || number < -1073741823)
 			return false;
 		return true;
 	}
 
-	static generateSecretNumber() {
-		var secret = BITBOX.Crypto.randomBytes(32);
+	static generateSecretNumber(): Buffer {
+		var secret: Buffer = BITBOX.Crypto.randomBytes(32);
 		while(!this.secretIsValid(secret)){
 			secret = BITBOX.Crypto.randomBytes(32);
 		}
 		return secret;
 	}
 
-	static async sendRawTransaction(hex, retries=20) {
-		var result;
+	static async sendRawTransaction(hex: string, retries=20): Promise<string> {
+		var result: string = "";
 
 		var i = 0;
 
-		while(result == undefined){
+		while(result == ""){
 			result = await BITBOX.RawTransactions.sendRawTransaction(hex);
 			i++;
 			if (i > retries)
@@ -50,7 +139,7 @@ module.exports = class Core {
 		return result;
 	}
 
-	static async getAddressDetailsWithRetry(address, retries=20){
+	static async getAddressDetailsWithRetry(address: string, retries: number = 20){
 		var result;
 		var count = 0;
 
@@ -66,7 +155,7 @@ module.exports = class Core {
 		return result;
 	}
 
-	static async getUtxoWithRetry(address, retries=20){
+	static async getUtxoWithRetry(address: string, retries: number = 20){
 		var result;
 		var count = 0;
 
@@ -81,25 +170,26 @@ module.exports = class Core {
 		return result;
 	}
 
-	static async getUtxo(address) {
+	static async getUtxo(address: string) {
 		return new Promise( (resolve, reject) => {
-			BITBOX.Address.utxo(address).then((result) => { 
+			BITBOX.Address.utxo(address).then((result: any) => { 
 				resolve(result)
-			}, (err) => { 
+			}, (err: any) => { 
 				console.log(err)
 				reject(err)
 			})
 		})
 	}
 
-	static purseAmount(betAmount){
+	static purseAmount(betAmount: number): number {
 		let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
 		return (betAmount * 2 ) - byteCount - 750;
 	}
 
 
+	static decodePhaseData(bufArray: (Buffer)[], networkByte: number = 0x00): Phase1Data | Phase2Data | Phase3Data | Phase4Data| Phase6Data {
 
-	static decodePhaseData(bufArray, networkByte=0x00) {
+		let result: Phase1Data | Phase2Data | Phase3Data | Phase3Data | Phase4Data | Phase6Data;
 
 		// convert op_return buffer to hex string
 		//op_return = op_return.toString('hex');
@@ -109,67 +199,93 @@ module.exports = class Core {
 		//let buf = Buffer.from(data[0].trim(), 'hex');  // NOTE: the index of data was changed to 0 due to MessageFeed listen method.
 
 		// grab the common fields
-		let version = bufArray[0].slice(0,1).readUInt8();
-		let betType = bufArray[0].slice(1,2).readUInt8();
-		let phase = bufArray[0].slice(2,3).readUInt8();
-		let results = { betType: betType, version: version, phase: phase };
+		//var results: PhaseData;
+		let version = bufArray[0].slice(0,1).readUInt8(0);
+		let betType = bufArray[0].slice(1,2).readUInt8(0);
+		let phase = bufArray[0].slice(2,3).readUInt8(0);
+		//results = { betType: betType, version: version, phase: phase };
 
 		// Phase 1 specific fields
 		if(phase === 1) {
-			// Bet Amount
-			results.amount = parseInt(bufArray[1].toString('hex'), 16);
-			// Host commitment
-			results.hostCommitment = bufArray[2];
+			let phase1Result: Phase1Data = { 
+				betType: betType, 
+				version: version, 
+				phase: phase,
+				amount: parseInt(bufArray[1].toString('hex'), 16),
+				hostCommitment: bufArray[2]
+			};
 
 			// Target address (as hash160 without network or sha256)
 			if (bufArray.length > 3){ 
-				var pkHash160Hex = bufArray[3].toString('Hex');
-				results.address = Utils.hash160_2_cashAddr(pkHash160Hex, networkByte);
+				var pkHash160 = bufArray[3];
+				phase1Result.address = Utils.hash160_2_cashAddr(pkHash160, networkByte);
 			}
+
+			result = phase1Result;
+
 		// Phase 2 specific fields
 		} else if(phase === 2) {
-			// Bet Txn Id
-			results.betTxId = bufArray[1];
-			// 33 byte Multi-sig Pub Key
-			results.multisigPubKey = bufArray[2];
-			// 20 byte bob commitment
-			results.secretCommitment = bufArray[3];
+			let phase2Result: Phase2Data = {
+				betType: betType, 
+				version: version, 
+				phase: phase,
+				betTxId: bufArray[1],
+				multisigPubKey: bufArray[2],
+				secretCommitment: bufArray[3]
+			};
+
+			result = phase2Result;
 
 		// Phase 3  specific fields
 		} else if(phase === 3) {
-			// 32 byte Bet Txn Id
-			results.betTxId = bufArray[1];
-			// 32 byte Participant Txn Id
-			results.participantOpReturnTxId = bufArray[2];
-			// 32 byte Host P2SH txid
-			results.hostP2SHTxId = bufArray[3];
-			// 33 byte Host (Alice) multsig pubkey
-			results.hostMultisigPubKey = bufArray[4];
+
+			let phase3Result: Phase3Data = {
+				betType: betType, 
+				version: version, 
+				phase: phase,
+				betTxId: bufArray[1],
+				participantOpReturnTxId: bufArray[2],
+				hostP2SHTxId: bufArray[3],
+				hostMultisigPubKey: bufArray[4]
+			};
+
+			result = phase3Result;
 
 		//Phase 4 specific fields
 		} else if(phase === 4) {
-			// 32 byte Bet Txn Id
-			results.betTxId = bufArray[1];
-			// 32 byte Participant Txn Id
-			results.participantP2SHTxId = bufArray[2];
-			let sigs = bufArray[3];
-			// 72 byte Participant Signature 1
-			results.participantSig1 = Utils.unpadSig(sigs.slice(0,72));
-			// 72 byte Participant Signature 2
-			results.participantSig2 = Utils.unpadSig(sigs.slice(72));
+
+			let phase4Result: Phase4Data = {
+				betType: betType, 
+				version: version, 
+				phase: phase,
+				betTxId: bufArray[1],
+				participantP2SHTxId: bufArray[2],
+				participantSig1: bufArray[3],
+				participantSig2: bufArray[4]
+			}
+
+			result = phase4Result;
 
 		// Phase 6 specific fields
 		} else if(phase === 6) {
-			// 32 byte Bet Txn Id
-			results.betTxId = bufArray[1];
-			// 32 byte Secret Value
-			results.secretValue = bufArray[2];
+			let phase6Result: Phase6Data = {
+				betType: betType, 
+				version: version, 
+				phase: phase,
+				betTxId: bufArray[1],
+				secretValue: bufArray[2]
+			}
+
+			result = phase6Result;
+		}
+		else { 
+			throw new Error("Phase not detected during decoding bet message data.")
 		}
 
-		return results;
+		return result;
 	}
 
-	static async createOP_RETURN(wallet, op_return_buf) {
+	static async createOP_RETURN(wallet: any, op_return_buf: Buffer) {
 		
 		// THIS MAY BE BUGGY TO HAVE THIS HERE
 		//wallet.utxo = await this.getUtxo(wallet.address);
@@ -179,7 +295,7 @@ module.exports = class Core {
 		let hashType = transactionBuilder.hashTypes.SIGHASH_ALL;
 
 		let totalUtxo = 0;
-		wallet.utxo.forEach((item, index) => { 
+		wallet.utxo.forEach((item: any, index: any) => { 
 			transactionBuilder.addInput(item.txid, item.vout); 
 			totalUtxo += item.satoshis;
 		});
@@ -193,8 +309,8 @@ module.exports = class Core {
 		//console.log("satoshis left: " + satoshisAfterFee);
 		let key = BITBOX.ECPair.fromWIF(wallet.wif);
 
-		let redeemScript;
-		wallet.utxo.forEach((item, index) => {
+		let redeemScript: Buffer;
+		wallet.utxo.forEach((item: any, index: number) => {
 			transactionBuilder.sign(index, key, redeemScript, hashType, item.satoshis);
 		});
 
@@ -206,14 +322,14 @@ module.exports = class Core {
 		return txId;
 	}
 
-	static async createEscrow(wallet, script, betAmount){
+	static async createEscrow(wallet: any, script: Buffer, betAmount: number){
 		
 		//return new Promise( (resolve, reject) => {
 		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 		let hashType = transactionBuilder.hashTypes.SIGHASH_ALL | transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY;
 
 		let totalUtxo = 0;
-		wallet.utxo.forEach((item, index) => { 
+		wallet.utxo.forEach((item: any, index: any) => { 
 			transactionBuilder.addInput(item.txid, item.vout); 
 			totalUtxo += item.satoshis;
 		});
@@ -237,8 +353,8 @@ module.exports = class Core {
 
 		let key = BITBOX.ECPair.fromWIF(wallet.wif);
 
-		let redeemScript;
-		wallet.utxo.forEach((item, index) => {
+		let redeemScript: Buffer;
+		wallet.utxo.forEach((item: any, index: any) => {
 			transactionBuilder.sign(index, key, redeemScript, hashType, item.satoshis);
 		});
 		//console.log("signed escrow inputs...");
@@ -250,17 +366,18 @@ module.exports = class Core {
 		return txId;
     }
     
-    static async redeemEscrowToEscape(wallet, redeemScript, txid, betAmount){
+    static async redeemEscrowToEscape(wallet: any, redeemScript: Buffer, txid: Buffer, betAmount: number){
         
         //return new Promise( (resolve, reject) => {
     
 		let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
-		let participantKey = BITBOX.ECPair.fromWIF(client.wif)
+		//let participantKey = BITBOX.ECPair.fromWIF(client.wif)
 		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
 		let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
 		let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
 		let satoshisAfterFee = betAmount - byteCount - 350;
+
 		// NOTE: must set the Sequence number below
 		transactionBuilder.addInput(txid, 0, bip68.encode({ blocks: 1 })); // No need to worry about sweeping the P2SH address.      
 		transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
@@ -269,13 +386,13 @@ module.exports = class Core {
 
 		let signatureHash = tx.hashForWitnessV0(0, redeemScript, betAmount, hashType);
 		let hostSignature = hostKey.sign(signatureHash).toScriptSignature(hashType);
-		let participantSignature = participantKey.sign(signatureHash).toScriptSignature(hashType);
+		//let participantSignature = participantKey.sign(signatureHash).toScriptSignature(hashType);
 
-		let redeemScriptSig = []; // start by pushing with true for makeBet mode
+		let redeemScriptSig: any = []; // start by pushing with true for makeBet mode
 
 		// host signature
 		redeemScriptSig.push(hostSignature.length);
-		hostSignature.forEach((item, index) => { redeemScriptSig.push(item); });
+		hostSignature.forEach((item: number, index: number) => { redeemScriptSig.push(item); });
 
 		// push mode onto stack for MakeBet mode
 		redeemScriptSig.push(0x00); //use 0 for escape mode
@@ -284,7 +401,7 @@ module.exports = class Core {
 		redeemScriptSig.push(redeemScript.length);
 		redeemScript.forEach((item, index) => { redeemScriptSig.push(item); });
 		
-		redeemScriptSig = Buffer(redeemScriptSig);
+		redeemScriptSig = Buffer.from(redeemScriptSig);
 		
 		let redeemScriptSigHex = redeemScriptSig.toString('hex');
 		let redeemScriptHex = redeemScript.toString('hex');
@@ -293,6 +410,7 @@ module.exports = class Core {
 		let hex = tx.toHex();
 		
 		let txId = await Core.sendRawTransaction(hex);
+
 		return txId;
 	}
 }

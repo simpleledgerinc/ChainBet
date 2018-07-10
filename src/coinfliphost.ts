@@ -1,31 +1,41 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
+
 var inquirer = require('inquirer');
 
-let Utils = require('./utils');
-let Core = require('./core');
-let Host = require('./host');
-let CoinFlipShared = require('./coinflipshared')
+import { Core, WalletKey, BetState, Phase2Data, Phase4Data, Phase6Data } from './core';
+import { Utils } from './utils';
+import { Host } from './host';
+import { CoinFlipShared } from './coinflipshared';
+import { MessageFeed } from './messagefeed';
+
+let bip68 = require('bip68');
 
 // CoinFlipClient class represents 1 bet's state management
-module.exports = class CoinFlipHost extends Host {
-    constructor(wif, betAmount, feed, debug=false) {
+export class CoinFlipHost extends Host {
+
+    wallet: WalletKey;
+    isDebugging: boolean;
+    betState: BetState;
+    complete: boolean;
+    feed: MessageFeed;
+
+    constructor(wif: string, betAmount: number, feed: MessageFeed, debug: boolean = false) {
         super();
+        let ecpair = BITBOX.ECPair.fromWIF(wif);
 
-        this.wif = wif;            
-        let ecpair = BITBOX.ECPair.fromWIF(this.wif);
-        this.pubkey = BITBOX.ECPair.toPublicKey(ecpair);
-        this.address = BITBOX.ECPair.toCashAddress(ecpair);
-
-        this.wallet = {
-            wif: this.wif, 
-            pubkey: this.pubkey, 
-            address: this.address
-        }
+        this.wallet = { 
+            wif: wif, 
+            pubkey: BITBOX.ECPair.toPublicKey(ecpair), 
+            address: BITBOX.ECPair.toCashAddress(ecpair) 
+        };            
 
         this.isDebugging = debug;
 
-        this.betState = { amount: betAmount };
+        this.betState = { 
+            amount: betAmount, 
+            phase: 1, 
+         };
         this.betState.phase = 1;
         this.complete = false;
 
@@ -43,7 +53,7 @@ module.exports = class CoinFlipHost extends Host {
         console.log('|              PHASE 1: Sending coin flip bet announcement...                 |');
         console.log('-------------------------------------------------------------------------------')
         
-        this.betState.betId = await CoinFlipHost.sendPhase1Message(this.wallet, this.betState.amount, this.betState.secretCommitment);
+        this.betState.betId = await CoinFlipHost.sendPhase1Message(this.wallet, <number> this.betState.amount, <Buffer> this.betState.secretCommitment);
         if(this.betState.betId.length == 64){
             console.log('\nCoinflip announcement sent. \n(msg txn: ' + this.betState.betId + ')');
             this.betState.phase = 2;
@@ -64,7 +74,8 @@ module.exports = class CoinFlipHost extends Host {
 
             var clientPhase2Messages = this.feed.messages.filter(function(item){ 
                 if(item.phase == 2){
-                    if(item.betTxId.toString('hex') == betId){ return true; }
+                    let p2item = <Phase2Data> item;
+                    if(p2item.betTxId.toString('hex') == betId){ return true; }
                 } 
                 return false;
             });
@@ -72,7 +83,7 @@ module.exports = class CoinFlipHost extends Host {
             if(clientPhase2Messages.length > 0){
                 // ignore target address field from host for now...
                 // accept first bet detected
-                let bet = clientPhase2Messages[clientPhase2Messages.length-1];
+                let bet = <Phase2Data> clientPhase2Messages[clientPhase2Messages.length-1];
                 this.betState.clientTxId = bet.op_return_txnId;
                 this.betState.clientmultisigPubKey = bet.multisigPubKey;
                 this.betState.clientCommitment = bet.secretCommitment;
@@ -91,13 +102,17 @@ module.exports = class CoinFlipHost extends Host {
         console.log("|              PHASE 3: Funding the host's side of the bet...                 |");
         console.log('-------------------------------------------------------------------------------');
         
-        let escrowBuf = CoinFlipShared.buildCoinFlipHostEscrowScript(this.wallet.pubkey, this.betState.secretCommitment, this.betState.clientmultisigPubKey);
+        let escrowBuf = CoinFlipShared.buildCoinFlipHostEscrowScript(
+            this.wallet.pubkey, 
+            <Buffer> this.betState.secretCommitment, 
+            <Buffer> this.betState.clientmultisigPubKey
+        );
         this.wallet.utxo = await Core.getUtxoWithRetry(this.wallet.address);
-        let escrowTxid = await Core.createEscrow(this.wallet, escrowBuf, this.betState.amount);
+        let escrowTxid = await Core.createEscrow(this.wallet, escrowBuf, <number> this.betState.amount);
         console.log('\nOur escrow address has been funded! \n(txn: ' + escrowTxid);
-        await Utils.sleep(250); // short wait for BITBOX mempool to sync
+        await Utils.sleep(500); // short wait for BITBOX mempool to sync
 
-        let phase3MsgTxId = await CoinFlipHost.sendPhase3Message(this.wallet, this.betState.betId, this.betState.clientTxId, escrowTxid);
+        let phase3MsgTxId = await CoinFlipHost.sendPhase3Message(this.wallet, this.betState.betId, <string> this.betState.clientTxId, escrowTxid);
         console.log('Message sent to client with our escrow details. \n(msg txn: ' + phase3MsgTxId + ')');
         this.betState.phase = 4;
 
@@ -114,7 +129,8 @@ module.exports = class CoinFlipHost extends Host {
 
             var clientPhase4Messages = this.feed.messages.filter(function(item){ 
                 if(item.phase == 4) {
-                    if(item.betTxId.toString('hex') == betId){ // && item.participantP2SHTxId.toString('hex') == clientId){ 
+                    let p4item = <Phase4Data> item;
+                    if(p4item.betTxId.toString('hex') == betId){ // && item.participantP2SHTxId.toString('hex') == clientId){ 
                         return true; }
                 }
                 return false;
@@ -122,7 +138,7 @@ module.exports = class CoinFlipHost extends Host {
 
             if(clientPhase4Messages.length > 0) {
                 // ignore target address field from host for now...
-                let bet = clientPhase4Messages[clientPhase4Messages.length-1];
+                let bet = <Phase4Data> clientPhase4Messages[clientPhase4Messages.length-1];
                 this.betState.clientP2SHTxId = bet.participantP2SHTxId.toString('hex');
                 this.betState.participantSig1 = bet.participantSig1;
                 this.betState.participantSig2 = bet.participantSig2;
@@ -140,20 +156,27 @@ module.exports = class CoinFlipHost extends Host {
         console.log('|                   PHASE 5: Submitting Coin flip bet...                      |');
         console.log('-------------------------------------------------------------------------------');        
 
-        let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(this.pubkey, 
-                                                                        this.betState.secretCommitment,
-                                                                        this.betState.clientmultisigPubKey, 
-                                                                        this.betState.clientCommitment);
+        let betScriptBuf = CoinFlipShared.buildCoinFlipBetScriptBuffer(
+            this.wallet.pubkey, 
+            <Buffer> this.betState.secretCommitment,
+            <Buffer> this.betState.clientmultisigPubKey, 
+            <Buffer> this.betState.clientCommitment
+        );
 
-        let clientEscrowBuf = CoinFlipShared.buildCoinFlipClientEscrowScript(this.pubkey, 
-                                                                            this.betState.clientmultisigPubKey);
+        let clientEscrowBuf = CoinFlipShared.buildCoinFlipClientEscrowScript(
+            this.wallet.pubkey, 
+            <Buffer> this.betState.clientmultisigPubKey
+        );
 
-        let betTxId = await CoinFlipHost.redeemEscrowToMakeBet(this.wallet, 
-                                                                this.betState.secret, 
-                                                                this.betState.participantSig1,
-                                                                this.betState.participantSig2,
-                                                                escrowBuf, clientEscrowBuf, betScriptBuf, escrowTxid, 
-                                                                this.betState.clientP2SHTxId, this.betState.amount);
+        let betTxId = await CoinFlipHost.redeemEscrowToMakeBet(
+            this.wallet, 
+            this.betState.secret, 
+            <Buffer>this.betState.participantSig1,
+            <Buffer>this.betState.participantSig2,
+            escrowBuf, clientEscrowBuf, betScriptBuf, escrowTxid, 
+            <string> this.betState.clientP2SHTxId, 
+            <number> this.betState.amount
+        );
                                                                 
         if(betTxId.length == 64){
             console.log("\nBet Submitted! \n(txn: " + betTxId  + ")");
@@ -184,7 +207,8 @@ module.exports = class CoinFlipHost extends Host {
 
             var clientPhase6Messages = this.feed.messages.filter(function(item){ 
                 if(item.phase == 6) {
-                    if(item.betTxId.toString('hex') == betId){ // && item.participantP2SHTxId.toString('hex') == clientId){ 
+                    let p6Item = <Phase6Data> item;
+                    if(p6Item.betTxId.toString('hex') == betId){ // && item.participantP2SHTxId.toString('hex') == clientId){ 
                         return true; 
                     }
                 }
@@ -193,7 +217,7 @@ module.exports = class CoinFlipHost extends Host {
 
             if(clientPhase6Messages.length > 0) {
                 // ignore target address field from host for now...
-                let bet = clientPhase6Messages[clientPhase6Messages.length-1];
+                let bet = <Phase6Data> clientPhase6Messages[clientPhase6Messages.length-1];
                 this.betState.clientSecret = bet.secretValue;
 
                 let host_int_le = Core.readScriptInt32(this.betState.secret);
@@ -230,7 +254,12 @@ module.exports = class CoinFlipHost extends Host {
         console.log('-------------------------------------------------------------------------------');
         
 
-        let winTxnId = await CoinFlipHost.hostClaimWinSecret(this.wallet, this.betState.secret, this.betState.clientSecret, betScriptBuf, betTxId, this.betState.amount);
+        let winTxnId = await CoinFlipHost.hostClaimWinSecret(this.wallet, 
+                                                            this.betState.secret, 
+                                                            <Buffer> this.betState.clientSecret, 
+                                                            betScriptBuf, 
+                                                            betTxId, 
+                                                            <number> this.betState.amount);
         if(winTxnId.length != 64)
         {
             console.log("\nWe're sorry. Something terrible went wrong when trying to claim your winnings... " + winTxnId);
@@ -241,7 +270,7 @@ module.exports = class CoinFlipHost extends Host {
         this.complete = true;
     }
 
-	static async sendPhase1Message(wallet, betAmount, hostCommitment, clientTargetAddress){
+	static async sendPhase1Message(wallet: WalletKey, betAmount: number, hostCommitment: Buffer, clientTargetAddress?: string): Promise<string>{
         let phase1Buf = this.encodePhase1Message(betAmount, hostCommitment, clientTargetAddress);
         // console.log("Phase 1 OP_RETURN (hex): " + phase1Buf.toString('hex'));
         // console.log("Phase 1 OP_RETURN (ASM): " + BITBOX.Script.toASM(phase1Buf));
@@ -250,7 +279,7 @@ module.exports = class CoinFlipHost extends Host {
 		return txnId;
     }
 
-    static async sendPhase3Message(wallet, betTxId, clientTxId, escrowTxId){
+    static async sendPhase3Message(wallet: WalletKey, betTxId: string, clientTxId: string, escrowTxId: string): Promise<string>{
         let phase3Buf = this.encodePhase3(betTxId, clientTxId, escrowTxId, wallet.pubkey);
         // console.log("Phase 3 OP_RETURN (hex): " + phase3Buf.toString('hex'));
         // console.log("Phase 3 OP_RETURN (ASM): " + BITBOX.Script.toASM(phase3Buf));
@@ -259,9 +288,9 @@ module.exports = class CoinFlipHost extends Host {
         return txnId;
     }
     
-    static async redeemEscrowToMakeBet(wallet, hostSecret, clientSig1, clientSig2, 
-                                        hostRedeemScript, clientRedeemScript, betScript, 
-                                        hostTxId, clientTxId, betAmount) {
+    static async redeemEscrowToMakeBet(wallet: WalletKey, hostSecret: Buffer, clientSig1: Buffer, clientSig2: Buffer, 
+                                        hostRedeemScript: Buffer, clientRedeemScript: Buffer, betScript: Buffer, 
+                                        hostTxId: string, clientTxId: string, betAmount: number): Promise<string> {
 
         let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
         //let clientKey = BITBOX.ECPair.fromWIF(client.wif)
@@ -281,11 +310,11 @@ module.exports = class CoinFlipHost extends Host {
         let tx = transactionBuilder.transaction.buildIncomplete();
 
         // Sign alices escrow
-        let sigHash = tx.hashForWitnessV0(0, hostRedeemScript, betAmount, hashType);
-        let hostSig = hostKey.sign(sigHash).toScriptSignature(hashType);
+        let sigHash: number = tx.hashForWitnessV0(0, hostRedeemScript, betAmount, hashType);
+        let hostSig: Buffer = hostKey.sign(sigHash).toScriptSignature(hashType);
         //let clientSig = //clientKey.sign(sigHash).toScriptSignature(hashType);
 
-        let redeemScriptSig = []; // start by pushing with true for makeBet mode
+        let redeemScriptSig: number[] = []; // start by pushing with true for makeBet mode
 
         // multisig off by one fix
         redeemScriptSig.push(BITBOX.Script.opcodes.OP_0);
@@ -309,15 +338,15 @@ module.exports = class CoinFlipHost extends Host {
         redeemScriptSig.push(hostRedeemScript.length);
         hostRedeemScript.forEach((item, index) => { redeemScriptSig.push(item); });
         
-        redeemScriptSig = Buffer(redeemScriptSig);
-        tx.setInputScript(0, redeemScriptSig);
+        let redeemScriptSigBuf: Buffer = Buffer.from(redeemScriptSig);
+        tx.setInputScript(0, redeemScriptSigBuf);
 
         // Sign bob's escrow
-        let sigHash2 = tx.hashForWitnessV0(1, clientRedeemScript, betAmount, hashType);
-        let hostSig2 = hostKey.sign(sigHash2).toScriptSignature(hashType);
+        let sigHash2: number = tx.hashForWitnessV0(1, clientRedeemScript, betAmount, hashType);
+        let hostSig2: Buffer = hostKey.sign(sigHash2).toScriptSignature(hashType);
         //let clientSig2 = clientKey.sign(sigHash2).toScriptSignature(hashType);
 
-        let redeemScriptSig2 = []
+        let redeemScriptSig2: number[] = []
 
         // multisig off by one fix
         redeemScriptSig2.push(BITBOX.Script.opcodes.OP_0)
@@ -337,20 +366,20 @@ module.exports = class CoinFlipHost extends Host {
         redeemScriptSig2.push(clientRedeemScript.length)
         clientRedeemScript.forEach((item, index) => { redeemScriptSig2.push(item); });
         
-        redeemScriptSig2 = Buffer(redeemScriptSig2)
-        tx.setInputScript(1, redeemScriptSig2)
+        let redeemScriptSig2Buf = Buffer.from(redeemScriptSig2);
+        tx.setInputScript(1, redeemScriptSig2Buf);
         
         // uncomment for viewing script hex
         // let redeemScriptSigHex = redeemScriptSig.toString('hex');
         // let redeemScriptHex = redeemScript.toString('hex');
         
-        let hex = tx.toHex();
+        let hex: string = tx.toHex();
         
         let txId = await Core.sendRawTransaction(hex);
         return txId;
     }
 
-    static async hostClaimWinSecret(wallet, hostSecret, clientSecret, betScript, betTxId, betAmount){
+    static async hostClaimWinSecret(wallet: WalletKey, hostSecret: Buffer, clientSecret: Buffer, betScript: Buffer, betTxId: string, betAmount: number): Promise<string>{
 
         let purseAmount = Core.purseAmount(betAmount);
 
@@ -366,10 +395,10 @@ module.exports = class CoinFlipHost extends Host {
         let tx = transactionBuilder.transaction.buildIncomplete();
 
         // Sign bet tx
-        let sigHash = tx.hashForWitnessV0(0, betScript, purseAmount, hashType);
-        let hostSig = hostKey.sign(sigHash).toScriptSignature(hashType);
+        let sigHash: number = tx.hashForWitnessV0(0, betScript, purseAmount, hashType);
+        let hostSig: Buffer = hostKey.sign(sigHash).toScriptSignature(hashType);
 
-        let redeemScriptSig = []; // start by pushing with true for makeBet mode
+        let redeemScriptSig: number[] = []; // start by pushing with true for makeBet mode
 
         // host signature
         redeemScriptSig.push(hostSig.length)
@@ -391,8 +420,7 @@ module.exports = class CoinFlipHost extends Host {
         redeemScriptSig.push(betScript.length);
         betScript.forEach((item, index) => { redeemScriptSig.push(item); });
         
-        redeemScriptSig = Buffer(redeemScriptSig);
-        tx.setInputScript(0, redeemScriptSig);
+        tx.setInputScript(0, Buffer.from(redeemScriptSig));
         
         // uncomment for viewing script hex
         // let redeemScriptSigHex = redeemScriptSig.toString('hex');
@@ -408,10 +436,9 @@ module.exports = class CoinFlipHost extends Host {
         return txId;
     }
 
-    static async hostClaimWinTimeout(wallet, betScript, betTxId, betAmount){
+    static async hostClaimWinTimeout(wallet: WalletKey, betScript: Buffer, betTxId: string, betAmount: number): Promise<string>{
 
         let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
-        let clientKey = BITBOX.ECPair.fromWIF(client.wif)
         let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
         let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
@@ -423,11 +450,10 @@ module.exports = class CoinFlipHost extends Host {
         let tx = transactionBuilder.transaction.buildIncomplete();
 
         // Sign bet tx
-        let sigHash = tx.hashForWitnessV0(0, betScript, betAmount, hashType);
-        let hostSig = hostKey.sign(sigHash).toScriptSignature(hashType);
-        let clientSig = clientKey.sign(sigHash).toScriptSignature(hashType);
+        let sigHash: number = tx.hashForWitnessV0(0, betScript, betAmount, hashType);
+        let hostSig: Buffer = hostKey.sign(sigHash).toScriptSignature(hashType);
 
-        let redeemScriptSig = []; // start by pushing with true for makeBet mode
+        let redeemScriptSig: number[] = []; // start by pushing with true for makeBet mode
 
         // host signature
         redeemScriptSig.push(hostSig.length)
@@ -441,14 +467,13 @@ module.exports = class CoinFlipHost extends Host {
         redeemScriptSig.push(betScript.length);
         betScript.forEach((item, index) => { redeemScriptSig.push(item); });
         
-        redeemScriptSig = Buffer(redeemScriptSig);
-        tx.setInputScript(0, redeemScriptSig);
+        tx.setInputScript(0, Buffer.from(redeemScriptSig));
         
         // uncomment for viewing script hex
         // let redeemScriptSigHex = redeemScriptSig.toString('hex');
         // let redeemScriptHex = redeemScript.toString('hex');
         
-        let hex = tx.toHex();
+        let hex: string = tx.toHex();
         
         let txId = await Core.sendRawTransaction(hex);
         return txId;

@@ -14,15 +14,15 @@ The following dice.js example shows a simple command-line program which facilita
 
 ### Main Menu
 
-![Main Menu](https://github.com/jcramer/chainbet/blob/master/examples/images/main_menu.png?raw=true)
+![Main Menu](https://github.com/jcramer/chainbet/blob/master/examples/dice/images/main_menu.png?raw=true)
 
 ### Winner
 
-![Dice Winner](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Winner.png?raw=true)
+![Dice Winner](https://github.com/jcramer/chainbet/blob/master/examples/dice/images/Coin%20Flip%20Winner.png?raw=true)
 
 ### Loser
 
-![Dice Loser](https://github.com/jcramer/chainbet/blob/master/examples/images/Coin%20Flip%20Loser.png?raw=true)
+![Dice Loser](https://github.com/jcramer/chainbet/blob/master/examples/dice/images/Coin%20Flip%20Loser.png?raw=true)
 
 ## Npm Package
 
@@ -46,3 +46,12 @@ chainbet.Core.decodePhaseData(scriptHex);
 //   address: 'bitcoincash:qzs02v05l7qs5s24srqju498qu55dwuj0cx5ehjm2c' }
 
 ```
+
+// Thought attorney & filed, 
+
+// File charter.
+
+// Re-issue Stock Certificate.
+
+// 
+

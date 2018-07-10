@@ -1,11 +1,11 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 
-let Core = require('./core');
+import { Core } from './core';
 
-module.exports = class Wallet {
+export class Wallet {
 
-	static async listAddressDetails(wallet){
+	static async listAddressDetails(wallet: any): Promise<void>{
 		for (let i = 0; i < wallet.length; i++) {
             let ecpair = BITBOX.ECPair.fromWIF(wallet[i].wif);
 			let address = BITBOX.ECPair.toCashAddress(ecpair);
@@ -16,7 +16,7 @@ module.exports = class Wallet {
         }
 	}
 
-    static async selectViableWIF(wallet) {
+    static async selectViableWIF(wallet: any[]): Promise<string> {
 
 		for (let i = 0; i < wallet.length; i++) {
 
@@ -35,7 +35,7 @@ module.exports = class Wallet {
         throw new Error("No viable WIF found in wallet.");
     }
 
-	static async sweepToAddress(wallet, destinationAddress) {
+	static async sweepToAddress(wallet: any, destinationAddress: string): Promise<void> {
 
 		for (let i = 0; i < wallet.length; i++) {
 			let ecpair = BITBOX.ECPair.fromWIF(wallet[i].wif);
@@ -48,7 +48,7 @@ module.exports = class Wallet {
 			let hashType = transactionBuilder.hashTypes.SIGHASH_ALL;
 	
 			let totalUtxo = 0;
-			wallet[i].utxo.forEach((item, index) => { 
+			wallet[i].utxo.forEach((item: any, index: any) => { 
 				transactionBuilder.addInput(item.txid, item.vout); 
 				totalUtxo += item.satoshis;
 			});
@@ -73,8 +73,8 @@ module.exports = class Wallet {
 		
 				//let key = BITBOX.ECPair.fromWIF(wallet.wif);
 		
-				let redeemScript;
-				wallet[i].utxo.forEach((item, index) => {
+				let redeemScript: Buffer;
+				wallet[i].utxo.forEach((item: any, index: any) => {
 					transactionBuilder.sign(index, ecpair, redeemScript, hashType, item.satoshis);
 				});
 				//console.log("signed escrow inputs...");
@@ -93,7 +93,7 @@ module.exports = class Wallet {
 		console.log("Done withdrawing funds from wallet");
 	}
 	
-	static async checkSufficientBalance(address) {
+	static async checkSufficientBalance(address: string) {
 		let addrDetails = await Core.getAddressDetailsWithRetry(address);
 		
 		if ((addrDetails.unconfirmedBalanceSat <= 0 && addrDetails.balanceSat == 0) || 
@@ -108,7 +108,7 @@ module.exports = class Wallet {
 
 	}
 	
-	static async getConfirmedAndUnconfirmedAddressBalance(address){
+	static async getConfirmedAndUnconfirmedAddressBalance(address: string){
 		let addrDetails = await Core.getAddressDetailsWithRetry(address);
 		let total = addrDetails.balanceSat + addrDetails.unconfirmedBalanceSat;
 		return total;

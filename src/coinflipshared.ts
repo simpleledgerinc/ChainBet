@@ -1,11 +1,12 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 
-let Core = require('./core');
+import { Core, WalletKey } from './core';
 
-module.exports = class CoinFlipShared {
+export class CoinFlipShared {
 
-	static buildCoinFlipBetScriptBuffer(hostPubKey, hostCommitment, clientPubKey, clientCommitment){
+	static buildCoinFlipBetScriptBuffer(hostPubKey: Buffer, 
+		hostCommitment: Buffer, clientPubKey: Buffer, clientCommitment: Buffer): Buffer{
 		
 		let script = [
 			BITBOX.Script.opcodes.OP_IF,
@@ -97,7 +98,7 @@ module.exports = class CoinFlipShared {
 		return BITBOX.Script.encode(script);
 	}
 	
-    static buildCoinFlipHostEscrowScript(hostPubKey, hostCommitment, clientPubKey){
+    static buildCoinFlipHostEscrowScript(hostPubKey: Buffer, hostCommitment: Buffer, clientPubKey: Buffer): Buffer{
     
         let script = [
             BITBOX.Script.opcodes.OP_IF, 
@@ -136,7 +137,7 @@ module.exports = class CoinFlipShared {
         return BITBOX.Script.encode(script);
 	}
 	
-    static buildCoinFlipClientEscrowScript(hostPubKey, clientPubKey){
+    static buildCoinFlipClientEscrowScript(hostPubKey: Buffer, clientPubKey: Buffer): Buffer{
         let script = [
             BITBOX.Script.opcodes.OP_IF, 
             BITBOX.Script.opcodes.OP_2,
@@ -166,7 +167,7 @@ module.exports = class CoinFlipShared {
         return BITBOX.Script.encode(script);
 	}
 	
-	static createEscrowSignature(wallet, escrowTxId, escrowScript, betAmount, betScript){
+	static createEscrowSignature(wallet: WalletKey, escrowTxId: string, escrowScript: Buffer, betAmount: number, betScript: Buffer): Buffer{
 		let clientKey = BITBOX.ECPair.fromWIF(wallet.wif)
 		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
@@ -183,9 +184,8 @@ module.exports = class CoinFlipShared {
 		let tx = transactionBuilder.transaction.buildIncomplete();
 
 		// Sign escrow utxo
-		let sigHash = tx.hashForWitnessV0(0, escrowScript, betAmount, hashType);
-		let sig = clientKey.sign(sigHash).toScriptSignature(hashType);
+		let sigHash: number = tx.hashForWitnessV0(0, escrowScript, betAmount, hashType);
+		let sig: Buffer = clientKey.sign(sigHash).toScriptSignature(hashType);
 		return sig;
 	}
-	
 }

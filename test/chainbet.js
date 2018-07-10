@@ -1,7 +1,7 @@
 let fixtures = require('./fixtures/chainbet.json')
 //let chai = require('chai');
 let assert = require('assert');
-let chainbet = require('../chainbet');
+let chainbet = require('../lib/chainbet');
 
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
@@ -117,7 +117,7 @@ describe('#chainbet', () => {
 				let betTxId = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b'
 				let participantTxId = '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098'
 				let hostP2SHTxId = '999e1c837c76a1b7fbb7e57baf87b309960f5ffefbf2a9b95dd890602272f644'
-				let hostmultiSigPubKey = '111111111111111111111111111111111111111111111111111111111111111111'
+				let hostmultiSigPubKey = Buffer.from('111111111111111111111111111111111111111111111111111111111111111111', 'hex');
 				let script_buf = chainbet.Host.encodePhase3(betTxId, participantTxId, hostP2SHTxId, hostmultiSigPubKey)
 			assert.equal(script_buf.length <= 223, true);
 
@@ -144,7 +144,7 @@ describe('#chainbet', () => {
 				script_phase4 = script_buf.toString('hex');
 
 				asm_phase4 = BITBOX.Script.toASM(script_buf);
-				assert.equal(asm_phase4, 'OP_RETURN 00424554 010104 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cc1003045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cc1');
+				assert.equal(asm_phase4, 'OP_RETURN 00424554 010104 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 3045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cc1 3045022100c12a7d54972f26d14cb311339b5122f8c187417dde1e8efb6841f55c34220ae0022066632c5cd4161efa3a2837764eee9eb84975dd54c2de2865e9752585c53e7cc1');
 			});
 		});
 	});
