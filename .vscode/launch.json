@@ -7,10 +7,30 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch dice.js with args",
+            "name": "Launch dice.js Client with args",
             "program": "${workspaceFolder}/examples/dice/dice.js",
             "cwd": "${workspaceFolder}/examples/dice",
             "args": [ "-m", "client", "-d", "1"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch dice.ts Client with args",
+            "cwd": "${workspaceFolder}/examples/dice",
+            "args": ["${workspaceFolder}/examples/dice/dice.ts", "-m", "client", "-d", "1"],
+            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+            "sourceMaps": true,
+            "protocol": "inspector",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch dice.ts Host with args",
+            "cwd": "${workspaceFolder}/examples/dice",
+            "args": ["${workspaceFolder}/examples/dice/dice.ts", "-m", "host", "-d", "1"],
+            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+            "sourceMaps": true,
+            "protocol": "inspector",
         },
         {
             "type": "node",

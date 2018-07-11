@@ -1,68 +1,61 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 let BITBOX = new BITBOXCli();
 
-let Utils = require('./utils');
-
-module.exports = class Client {
+export class Client {
 
 	// Phase 2: Bet Participant Acceptance
-	static encodePhase2Message(betId, multisigPubKeyHex, secretCommitmentHex) {
+	static encodePhase2Message(betId: any, multisigPubKey: Buffer, secretCommitment: Buffer): Buffer {
 
 		let script = [
 			BITBOX.Script.opcodes.OP_RETURN,
 			// 4 byte prefix
-			Buffer('00424554', 'hex'),
+			Buffer.from('00424554', 'hex'),
 			// 1 byte version id / 1 betType byte /  1 phase byte
-			Buffer('010102', 'hex'),
+			Buffer.from('010102', 'hex'),
 			// 32 byte betTxId hex
-			Buffer(betId, 'hex'),
+			Buffer.from(betId, 'hex'),
 			// 33 byte participant (Bob) multisig Pub Key hex 
-			Buffer(multisigPubKeyHex, 'hex'),
+			multisigPubKey,
 			// 32 byte participant (Bob) secret commitment
-			Buffer(secretCommitmentHex, 'hex')
+			secretCommitment
 		];
 
 		return BITBOX.Script.encode(script)
 	}
 
 	// Phase 4: Bet Participant Funding
-	static encodePhase4(betId, clientEscrowTxId, participantSig1, participantSig2) {
-		
-		// pad sigs to ensure 70 bytes
-		var sig1 = Utils.padSig(participantSig1);
-		var sig2 = Utils.padSig(participantSig2);
-
-		// combine sigs into a single value for one pushdata
-		var sigs = Buffer.concat([sig1, sig2]);
+	static encodePhase4(betId: any, clientEscrowTxId: any, participantSig1: Buffer, participantSig2: Buffer): Buffer {
 
 		let script = [
 			BITBOX.Script.opcodes.OP_RETURN,
 			// 4 byte prefix
-			Buffer('00424554','hex'),
+			Buffer.from('00424554','hex'),
 			// 1 byte version id / 1 betType byte /  1 phase byte
-			Buffer('010104', 'hex'),
+			Buffer.from('010104', 'hex'),
 			// 32 byte bet tx id
-			Buffer(betId, 'hex'),
+			Buffer.from(betId, 'hex'),
 			// 32 byte bet tx id
-			Buffer(clientEscrowTxId, 'hex'),
-			// 144 bytes for 2 sigs)
-			sigs,
+			Buffer.from(clientEscrowTxId, 'hex'),
+			// 71-72 bytes for sig
+			participantSig1,
+			// 71-72 bytes for sig
+			participantSig2,
 		];
 
 		return BITBOX.Script.encode(script)
 	}
 
 	// Phase 6: Bet Participant Resignation
-	static encodePhase6(betId, secretValue) {
+	static encodePhase6(betId: any, secretValue: Buffer): Buffer {
 
 		let script = [
 		BITBOX.Script.opcodes.OP_RETURN,
 		// 4 byte prefix
-		Buffer('00424554', 'hex'),
+		Buffer.from('00424554', 'hex'),
 		// 1 byte version id / 1 betType byte /  1 phase byte
-		Buffer('010106', 'hex'),
+		Buffer.from('010106', 'hex'),
 		// 32 byte bet txn id
-		Buffer(betId, 'hex'),
+		Buffer.from(betId, 'hex'),
 		// 32 byte Secret value
 		secretValue
 	];

@@ -6,11 +6,13 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "chainbet": "^0.0.12",
+    "chainbet": "^0.0.14",
     "commander": "^2.15.1",
     "bitbox-cli": "^1.1.2",
     "inquirer": "^6.0.0",
-    "jsonfile": "^4.0.0"
+    "@types/inquirer": "^0.0.42",
+    "jsonfile": "^4.0.0",
+    "@types/jsonfile": "^4.0.1"
   },
   "devDependencies": {}
 }
