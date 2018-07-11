@@ -7,7 +7,27 @@
   "scripts": {
     "build": "tsc",
     "postbuild": "cp -R node_modules lib/node_modules",
-    "test": "nyc mocha --require babel-core/register"
+    "test": "nyc mocha --require babel-core/register",
+    "test-ts": "nyc mocha --require ts-node/register --require source-map-support/register --full-trace --bail src/**/*.spec.ts"
+  },
+  "nyc": {
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ],
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
   },
   "author": "James Cramer <jscramer@gmail.com>",
   "repository": {
@@ -16,7 +36,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^10.5.2",
     "axios": "^0.18.0",
     "bip68": "^1.0.4",
     "bitbox-cli": "^1.2.0",
@@ -26,13 +45,19 @@
     "underscore": "^1.9.0"
   },
   "devDependencies": {
-    "ts-node": "^7.0.0",
-    "typescript": "^2.9.2",
+    "@types/node": "^10.5.2",
+    "@types/chai": "^4.1.4",
+    "@types/mocha": "^5.2.4",
+    "@types/assert":"~0.0.31",
     "assert": "^1.4.1",
     "babel-core": "^6.26.3",
     "chai": "^4.1.2",
+    "mocha": "^5.2.0",
+    "nconf": "^0.10.0",
     "nyc": "^11.6.0",
     "sinon": "^4.5.0",
-    "nconf": "^0.10.0"
+    "source-map-support": "^0.5.6",
+    "ts-node": "^7.0.0",
+    "typescript": "^2.9.2"
   }
 }

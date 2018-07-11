@@ -1,3 +1,4 @@
 examples
 .vscode
 .nyc_output
+coverage
