@@ -279,8 +279,8 @@ export class CoinFlipHost extends Host {
 		return txnId;
     }
 
-    static async sendPhase3Message(wallet: WalletKey, betTxId: string, clientTxId: string, escrowTxId: string): Promise<string>{
-        let phase3Buf = this.encodePhase3(betTxId, clientTxId, escrowTxId, wallet.pubkey);
+    static async sendPhase3Message(wallet: WalletKey, betId: string, clientTxId: string, escrowTxId: string): Promise<string>{
+        let phase3Buf = this.encodePhase3Message(betId, clientTxId, escrowTxId, wallet.pubkey);
         // console.log("Phase 3 OP_RETURN (hex): " + phase3Buf.toString('hex'));
         // console.log("Phase 3 OP_RETURN (ASM): " + BITBOX.Script.toASM(phase3Buf));
         wallet.utxo = await Core.getUtxoWithRetry(wallet.address);

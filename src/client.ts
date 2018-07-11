@@ -4,7 +4,7 @@ let BITBOX = new BITBOXCli();
 export class Client {
 
 	// Phase 2: Bet Participant Acceptance
-	static encodePhase2Message(betId: any, multisigPubKey: Buffer, secretCommitment: Buffer): Buffer {
+	static encodePhase2Message(betId: string, multisigPubKey: Buffer, secretCommitment: Buffer): Buffer {
 
 		let script = [
 			BITBOX.Script.opcodes.OP_RETURN,
@@ -24,7 +24,7 @@ export class Client {
 	}
 
 	// Phase 4: Bet Participant Funding
-	static encodePhase4(betId: any, clientEscrowTxId: any, participantSig1: Buffer, participantSig2: Buffer): Buffer {
+	static encodePhase4Message(betId: string, clientEscrowTxId: string, participantSig1: Buffer, participantSig2: Buffer): Buffer {
 
 		let script = [
 			BITBOX.Script.opcodes.OP_RETURN,
@@ -46,7 +46,7 @@ export class Client {
 	}
 
 	// Phase 6: Bet Participant Resignation
-	static encodePhase6(betId: any, secretValue: Buffer): Buffer {
+	static encodePhase6Message(betId: string, secretValue: Buffer): Buffer {
 
 		let script = [
 		BITBOX.Script.opcodes.OP_RETURN,

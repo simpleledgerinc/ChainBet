@@ -47,7 +47,7 @@ export class Host {
 	}
 
 	// Phase 3: Bet Host Funding
-	static encodePhase3(betId: any, participantTxId: any, hostP2SHTxId: any, hostMultisigPubKey: Buffer): Buffer {
+	static encodePhase3Message(betId: string, participantTxId: string, hostP2SHTxId: string, hostMultisigPubKey: Buffer): Buffer {
 	
 		let script = [
 			BITBOX.Script.opcodes.OP_RETURN,

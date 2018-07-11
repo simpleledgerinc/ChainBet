@@ -249,22 +249,22 @@ export class CoinFlipClient extends Client {
         return secretBuf;
     }
 
-    static async sendPhase2Message(wallet: WalletKey, betTxId: string, multisigPubKey: Buffer, secretCommitment: Buffer): Promise<string>{
-        let phase2Buf = this.encodePhase2Message(betTxId, multisigPubKey, secretCommitment);
+    static async sendPhase2Message(wallet: WalletKey, betId: string, multisigPubKey: Buffer, secretCommitment: Buffer): Promise<string>{
+        let phase2Buf = this.encodePhase2Message(betId, multisigPubKey, secretCommitment);
         wallet.utxo = await Core.getUtxoWithRetry(<string> wallet.address);
         let txnId = await Core.createOP_RETURN(wallet, phase2Buf);
         return txnId;
     }
 
-    static async sendPhase4Message(wallet: WalletKey, betTxId: string, escrowTxid: string, bobEscrowSig: Buffer, aliceEscrowSig: Buffer): Promise<string>{
-        let phase4Buf = this.encodePhase4(betTxId, escrowTxid, bobEscrowSig, aliceEscrowSig);
+    static async sendPhase4Message(wallet: WalletKey, betId: string, escrowTxid: string, bobEscrowSig: Buffer, aliceEscrowSig: Buffer): Promise<string>{
+        let phase4Buf = this.encodePhase4Message(betId, escrowTxid, bobEscrowSig, aliceEscrowSig);
         wallet.utxo = await Core.getUtxoWithRetry(<string>wallet.address);
         let txnId = await Core.createOP_RETURN(wallet, phase4Buf);
         return txnId;
     }
 
-    static async sendPhase6Message(wallet: WalletKey, betTxId: string, clientSecret: Buffer): Promise<string>{
-        let phase6Buf = this.encodePhase6(betTxId, clientSecret);
+    static async sendPhase6Message(wallet: WalletKey, betId: string, clientSecret: Buffer): Promise<string>{
+        let phase6Buf = this.encodePhase6Message(betId, clientSecret);
         wallet.utxo = await Core.getUtxoWithRetry(<string> wallet.address);
         let txnId = await Core.createOP_RETURN(wallet, phase6Buf);
         return txnId;
