@@ -46,12 +46,9 @@ var chainbet = __importStar(require("chainbet"));
 var BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 var BITBOX = new BITBOXCli();
 var fs = __importStar(require("fs"));
-//import * as context from 'commander';
 var context = require('commander');
 var inquirer = __importStar(require("inquirer"));
-//let inquirer = require('inquirer');
 var jsonfile = __importStar(require("jsonfile"));
-//let jsonfile = require('jsonfile');
 context.version('0.0.13')
     .option('-m, --mode [mode]', 'set program mode to bypass initial prompt')
     .option('-d, --debug [debug]', 'set debugger support (skips user prompts with default values)')
@@ -59,11 +56,11 @@ context.version('0.0.13')
 context.debug = (context.debug == "1" ? true : false);
 function main() {
     return __awaiter(this, void 0, void 0, function () {
-        var wallet, selection, wif, wif, chainfeed, wif, e_1, betAmount, answer, bet, wif, e_2, bet, answer;
+        var wallet, selection, wif, wif, chainfeed, wif, e_1, betAmount, answer_1, bet, wif, e_2, bet, answer_2, answer;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!true) return [3 /*break*/, 26];
+                    if (!true) return [3 /*break*/, 28];
                     return [4 /*yield*/, promptMainMenu()];
                 case 1:
                     selection = _a.sent();
@@ -118,8 +115,8 @@ function main() {
                                 }
                             }])];
                 case 7:
-                    answer = _a.sent();
-                    betAmount = parseInt(answer.amount);
+                    answer_1 = _a.sent();
+                    betAmount = parseInt(answer_1.amount);
                     _a.label = 8;
                 case 8:
                     bet = new chainbet.CoinFlipHost(wif, betAmount, chainfeed);
@@ -131,7 +128,7 @@ function main() {
                 case 10:
                     _a.sent();
                     return [3 /*break*/, 9];
-                case 11: return [3 /*break*/, 25];
+                case 11: return [3 /*break*/, 26];
                 case 12:
                     if (!(selection.mode == 'client')) return [3 /*break*/, 20];
                     _a.label = 13;
@@ -143,7 +140,7 @@ function main() {
                     return [3 /*break*/, 16];
                 case 15:
                     e_2 = _a.sent();
-                    console.log("\nNo viable addresses to use, please add funds or wait for 1 confirmation.");
+                    console.log('\nNo viable addresses to use, please add funds or wait for 1 confirmation.');
                     return [3 /*break*/, 16];
                 case 16:
                     if (!(wif != "")) return [3 /*break*/, 19];
@@ -156,7 +153,7 @@ function main() {
                 case 18:
                     _a.sent();
                     return [3 /*break*/, 17];
-                case 19: return [3 /*break*/, 25];
+                case 19: return [3 /*break*/, 26];
                 case 20:
                     if (!(selection.mode == 'withdraw')) return [3 /*break*/, 23];
                     console.log("withdrawing funds...");
@@ -171,22 +168,33 @@ function main() {
                                 }
                             }])];
                 case 21:
-                    answer = _a.sent();
-                    return [4 /*yield*/, chainbet.Wallet.sweepToAddress(wallet, answer.address)];
+                    answer_2 = _a.sent();
+                    return [4 /*yield*/, chainbet.Wallet.sweepToAddress(wallet, answer_2.address)];
                 case 22:
                     _a.sent();
-                    return [3 /*break*/, 25];
+                    return [3 /*break*/, 26];
                 case 23:
                     if (!(selection.mode == 'list')) return [3 /*break*/, 25];
                     return [4 /*yield*/, chainbet.Wallet.listAddressDetails(wallet)];
                 case 24:
                     _a.sent();
-                    _a.label = 25;
-                case 25: return [3 /*break*/, 0];
+                    return [3 /*break*/, 26];
+                case 25:
+                    if (selection.mode == 'quit') {
+                        process.exit();
+                    }
+                    _a.label = 26;
                 case 26:
-                    console.log("\nThanks for visiting Satoshi's Dice!");
-                    process.exit();
-                    return [2 /*return*/];
+                    console.log('\n');
+                    return [4 /*yield*/, inquirer.prompt([{ type: 'input', name: 'resume', message: "Press ENTER to continue OR type 'q' to Quit..." }])];
+                case 27:
+                    answer = _a.sent();
+                    if (answer.resume == 'q') {
+                        console.log("\nThanks for visiting Satoshi's Dice!");
+                        process.exit();
+                    }
+                    return [3 /*break*/, 0];
+                case 28: return [2 /*return*/];
             }
         });
     });
@@ -221,7 +229,8 @@ function promptMainMenu() {
                                     new inquirer.Separator("Wallet Tools"),
                                     { name: '  List balances', value: 'list' },
                                     { name: '  Generate new BCH address', value: 'generate' },
-                                    { name: '  Withdraw all funds', value: 'withdraw' }
+                                    { name: '  Withdraw all funds', value: 'withdraw' },
+                                    { name: '  Quit', value: 'quit' }
                                 ],
                             }])];
                 case 1: return [2 /*return*/, _a.sent()];
@@ -230,32 +239,4 @@ function promptMainMenu() {
         });
     });
 }
-///////////////////////////////////////////////////////////////////////////////////////////
-//
-// FOR DEBUGGING WITH VSCODE
-//
-// NOTE: The inquirer package used for user input is not compatible with the tty debugger 
-//       used by visual studio code.  Therfore, the following if statement must be used
-//       to allow use of the debugger.
-//
-///////////////////////////////////////////////////////////////////////////////////////////
-// async function debug(context: any){
-//     var wallet = jsonfile.readFileSync('./examples/wallet.json');
-//     var wif; 
-//     // Host mode debug (i.e., with context "-d 1 -r 1")
-//     if(selection.mode == "host")
-//         wif = wallet[0].wif;
-//     // Host mode debug (i.e., with context "-d 1 -r 1")
-//     else if(selection.mode == "client")
-//         wif = wallet[1].wif;
-//     context.wif = wif
-//     let ecpair = BITBOX.ECPair.fromWIF(wif);
-//     context.pubkey = BITBOX.ECPair.toPublicKey(ecpair);
-//     context.address = BITBOX.ECPair.toCashAddress(ecpair);
-//     console.log("\nYour address is: " + context.address);
-//     main(context);
-// }
 main();
-// if(!context.debug)
-// else if(context.debug)
-//     throw new Error("not implemented.");

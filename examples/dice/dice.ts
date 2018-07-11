@@ -94,7 +94,7 @@ async function main() {
                 var wif = await chainbet.Wallet.selectViableWIF(wallet);
 
             } catch(e) {
-                console.log("\nNo viable addresses to use, please add funds or wait for 1 confirmation.");
+                console.log('\nNo viable addresses to use, please add funds or wait for 1 confirmation.');
             }
 
             if(wif != ""){
@@ -123,9 +123,16 @@ async function main() {
         else if (selection.mode == 'list') {
             await chainbet.Wallet.listAddressDetails(wallet); 
         }
+        else if(selection.mode == 'quit') {
+            process.exit();
+        }
+        console.log('\n');
+        let answer: any = await inquirer.prompt([{type:'input', name:'resume', message:"Press ENTER to continue OR type 'q' to Quit..."}]);
+        if(answer.resume == 'q'){
+            console.log("\nThanks for visiting Satoshi's Dice!");
+            process.exit();
+        }
     }
-        console.log("\nThanks for visiting Satoshi's Dice!");
-        process.exit();
 }
 
 async function promptMainMenu() {
@@ -156,7 +163,8 @@ async function promptMainMenu() {
                 new inquirer.Separator("Wallet Tools"),
                 { name: '  List balances', value: 'list' },
                 { name: '  Generate new BCH address', value: 'generate' },
-                { name: '  Withdraw all funds', value: 'withdraw' }
+                { name: '  Withdraw all funds', value: 'withdraw' },
+                { name: '  Quit', value: 'quit' }
             ],
         }]);
     }
@@ -165,40 +173,4 @@ async function promptMainMenu() {
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////
-//
-// FOR DEBUGGING WITH VSCODE
-//
-// NOTE: The inquirer package used for user input is not compatible with the tty debugger 
-//       used by visual studio code.  Therfore, the following if statement must be used
-//       to allow use of the debugger.
-//
-///////////////////////////////////////////////////////////////////////////////////////////
-// async function debug(context: any){
-
-//     var wallet = jsonfile.readFileSync('./examples/wallet.json');
-//     var wif; 
-
-//     // Host mode debug (i.e., with context "-d 1 -r 1")
-//     if(selection.mode == "host")
-//         wif = wallet[0].wif;
-//     // Host mode debug (i.e., with context "-d 1 -r 1")
-//     else if(selection.mode == "client")
-//         wif = wallet[1].wif;
-
-//     context.wif = wif
-//     let ecpair = BITBOX.ECPair.fromWIF(wif);
-//     context.pubkey = BITBOX.ECPair.toPublicKey(ecpair);
-//     context.address = BITBOX.ECPair.toCashAddress(ecpair);
-
-//     console.log("\nYour address is: " + context.address);
-
-//     main(context);
-// }
-
 main();
-
-// if(!context.debug)
-    
-// else if(context.debug)
-//     throw new Error("not implemented.");
