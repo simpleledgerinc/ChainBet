@@ -1,8 +1,8 @@
 ## Node.js implementation of the Bitcoin Cash ChainBet protocol
 
-This repo contains a node.js implementation of the ChainBet protocol built using TypeScript. The specification of the ChainBet protocol is here: [https://github.com/fyookball/ChainBet](https://github.com/fyookball/ChainBet).  An example program (dice.ts) and a npm package are provided to demonstrate how to use the npm package.
+This repo contains a node.js implementation of the ChainBet protocol built using TypeScript. The specification of the ChainBet protocol is here: [https://github.com/fyookball/ChainBet](https://github.com/fyookball/ChainBet).  An example program (dice.js) is provided to demonstrate how to use the `chainbet` npm package.  Instructions for compiling the chainbet npm package from TypeScript source are also provided.
 
-### Main Menu
+### dice.js Main Menu
 
 ![Main Menu](https://github.com/jcramer/chainbet/blob/master/examples/dice/images/main_menu.png?raw=true)
 
@@ -14,17 +14,16 @@ This repo contains a node.js implementation of the ChainBet protocol built using
  4. `npm install`
  6. `node dice.js`
 
-## Compiling the dice.ts example from source
+## Compiling TypeScript Source for npm package
 
 The following dice.js example shows a simple command-line program which facilitates a trustless p2p dice games using the ChainBet npm package.  Running this example requires that at least one player is already running the program in "client mode" before another player uses "host mode" to announce a coin flip bet wager.
 
  1. install node.js (v8.11.3 or later)
  2. `git clone https://github.com/jcramer/chainbet`
- 3. `cd chainbet/examples/dice`
+ 3. `cd chainbet`
  4. `npm install`
  5. `npm run build`
- 6. `node dice.js`
-
+ 6. Verify the libs directory was created with output js and d.ts files.
 
 ### Dice Winner
 
