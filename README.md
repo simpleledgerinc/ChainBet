@@ -1,32 +1,42 @@
 ## Node.js implementation of the Bitcoin Cash ChainBet protocol
 
-This repo contains a node.js implementation of the ChainBet protocol. The specification of the ChainBet protocol is here: [https://github.com/fyookball/ChainBet](https://github.com/fyookball/ChainBet).  An example program (dice.js) and a npm package are provided to demonstrate how to use the npm package.
-
-## dice.js Example
-
-The following dice.js example shows a simple command-line program which facilitates a trustless p2p dice games using the ChainBet npm package.  Running this example requires that at least one player is already running the program in "client mode" before another player uses "host mode" to announce a coin flip bet wager.
-
- 1. install node.js (v8.11.3 or later)
- 2. `git clone https://github.com/jcramer/chainbet`
- 3. `cd chainbet/examples`
- 4. `npm install`
- 5. `node dice`
+This repo contains a node.js implementation of the ChainBet protocol built using TypeScript. The specification of the ChainBet protocol is here: [https://github.com/fyookball/ChainBet](https://github.com/fyookball/ChainBet).  An example program (dice.ts) and a npm package are provided to demonstrate how to use the npm package.
 
 ### Main Menu
 
 ![Main Menu](https://github.com/jcramer/chainbet/blob/master/examples/dice/images/main_menu.png?raw=true)
 
-### Winner
+## Running dice.js example
+
+ 1. install node.js (v8.11.3 or later)
+ 2. `git clone https://github.com/jcramer/chainbet`
+ 3. `cd chainbet/examples/dice`
+ 4. `npm install`
+ 6. `node dice.js`
+
+## Compiling the dice.ts example from source
+
+The following dice.js example shows a simple command-line program which facilitates a trustless p2p dice games using the ChainBet npm package.  Running this example requires that at least one player is already running the program in "client mode" before another player uses "host mode" to announce a coin flip bet wager.
+
+ 1. install node.js (v8.11.3 or later)
+ 2. `git clone https://github.com/jcramer/chainbet`
+ 3. `cd chainbet/examples/dice`
+ 4. `npm install`
+ 5. `npm run build`
+ 6. `node dice.js`
+
+
+### Dice Winner
 
 ![Dice Winner](https://github.com/jcramer/chainbet/blob/master/examples/dice/images/Coin%20Flip%20Winner.png?raw=true)
 
-### Loser
+### Dice Loser
 
 ![Dice Loser](https://github.com/jcramer/chainbet/blob/master/examples/dice/images/Coin%20Flip%20Loser.png?raw=true)
 
-## Npm Package
+## Dev Usage
 
-Install via `npm install chainbet`
+Install: `npm install chainbet`
 
 ```js
 let chainbet = require('chainbet');
@@ -46,12 +56,3 @@ chainbet.Core.decodePhaseData(scriptHex);
 //   address: 'bitcoincash:qzs02v05l7qs5s24srqju498qu55dwuj0cx5ehjm2c' }
 
 ```
-
-// Thought attorney & filed, 
-
-// File charter.
-
-// Re-issue Stock Certificate.
-
-// 
-
