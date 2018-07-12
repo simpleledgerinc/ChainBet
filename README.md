@@ -4,7 +4,7 @@ This repo contains a node.js implementation of the ChainBet protocol built using
 
 ### dice.js Main Menu
 
-![Main Menu](https://github.com/jcramer/chainbet/blob/master/examples/dice/images/main_menu.png?raw=true)
+![Main Menu](https://github.com/deskviz/chainbet/blob/master/examples/dice/images/main_menu.png?raw=true)
 
 ## Running dice.js example
 
@@ -27,11 +27,11 @@ The following dice.js example shows a simple command-line program which facilita
 
 ### Dice Winner
 
-![Dice Winner](https://github.com/jcramer/chainbet/blob/master/examples/dice/images/Coin%20Flip%20Winner.png?raw=true)
+![Dice Winner](https://github.com/deskviz/chainbet/blob/master/examples/dice/images/Coin%20Flip%20Winner.png?raw=true)
 
 ### Dice Loser
 
-![Dice Loser](https://github.com/jcramer/chainbet/blob/master/examples/dice/images/Coin%20Flip%20Loser.png?raw=true)
+![Dice Loser](https://github.com/deskviz/chainbet/blob/master/examples/dice/images/Coin%20Flip%20Loser.png?raw=true)
 
 ## Dev Usage
 
