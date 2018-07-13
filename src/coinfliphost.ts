@@ -1,5 +1,7 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-let BITBOX = new BITBOXCli();
+import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
+import { TransactionBuilder } from 'bitbox-cli/lib/TransactionBuilder';
+let BITBOX = <IBITBOXCli> new BITBOXCli();
 
 var inquirer = require('inquirer');
 
@@ -8,6 +10,7 @@ import { Utils } from './utils';
 import { Host } from './host';
 import { CoinFlipShared } from './coinflipshared';
 import { MessageFeed } from './messagefeed';
+import { AddressDetailsResult } from '../node_modules/bitbox-cli/lib/Address';
 
 let bip68 = require('bip68');
 
@@ -232,7 +235,7 @@ export class CoinFlipHost extends Host {
             }
 
             try {
-                var betDetails = await Core.getAddressDetailsWithRetry(betAddress);
+                var betDetails = <AddressDetailsResult> await Core.getAddressDetailsWithRetry(betAddress);
             } catch(e) {
                 console.log("\nClient failed to claim his win or report loss...");
                 this.complete = true;
@@ -294,7 +297,7 @@ export class CoinFlipHost extends Host {
 
         let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
         //let clientKey = BITBOX.ECPair.fromWIF(client.wif)
-        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+        let transactionBuilder = new TransactionBuilder('bitcoincash');
 
         let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
         let satoshisAfterFee = Core.purseAmount(betAmount);
@@ -384,7 +387,7 @@ export class CoinFlipHost extends Host {
         let purseAmount = Core.purseAmount(betAmount);
 
         let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
-        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+        let transactionBuilder = new TransactionBuilder('bitcoincash');
 
         let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
         let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
@@ -439,7 +442,7 @@ export class CoinFlipHost extends Host {
     static async hostClaimWinTimeout(wallet: WalletKey, betScript: Buffer, betTxId: string, betAmount: number): Promise<string>{
 
         let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
-        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+        let transactionBuilder = new TransactionBuilder('bitcoincash');
 
         let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
         let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });

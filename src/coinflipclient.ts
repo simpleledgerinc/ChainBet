@@ -1,5 +1,8 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-let BITBOX = new BITBOXCli();
+import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
+import { TransactionBuilder } from 'bitbox-cli/lib/TransactionBuilder';
+let BITBOX = <IBITBOXCli> new BITBOXCli();
+
 var inquirer = require('inquirer');
 
 import { Core, Phase1Data, Phase3Data, WalletKey, BetState } from './core';
@@ -7,6 +10,8 @@ import { Utils } from './utils';
 import { Client } from './client';
 import { MessageFeed } from './messagefeed';
 import { CoinFlipShared } from './coinflipshared';
+import { AddressDetails } from '../node_modules/bitbox-cli/lib/Util';
+import { AddressDetailsResult } from '../node_modules/bitbox-cli/lib/Address';
 
 export class CoinFlipClient extends Client {
     wallet: WalletKey;
@@ -175,7 +180,7 @@ export class CoinFlipClient extends Client {
         while(this.betState.phase == 5){
 
             try{
-                var host_p2sh_details = await Core.getAddressDetailsWithRetry(host_p2sh_Address, 30);
+                var host_p2sh_details = <AddressDetailsResult> await Core.getAddressDetailsWithRetry(host_p2sh_Address, 30);
             } catch(e){
                 console.log("\nHost failed to broadcast message in a timely manner.");
                 this.complete = true;
@@ -275,13 +280,13 @@ export class CoinFlipClient extends Client {
         let purseAmount = Core.purseAmount(betAmount);
 
         let clientKey = BITBOX.ECPair.fromWIF(wallet.wif)
-        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+        let transactionBuilder = new TransactionBuilder('bitcoincash');
 
         let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
 
         let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
         let satoshisAfterFee = purseAmount - byteCount - betScript.length - 142;
-        transactionBuilder.addInput(betTxId, 0)
+        transactionBuilder.addInput(betTxId, 0);
         transactionBuilder.addOutput(BITBOX.Address.toLegacyAddress(wallet.utxo[0].cashAddress), satoshisAfterFee);
 
         let tx = transactionBuilder.transaction.buildIncomplete();

@@ -1,5 +1,6 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-let BITBOX = new BITBOXCli();
+import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
+let BITBOX = <IBITBOXCli> new BITBOXCli();
 
 let node_crypto = require('crypto');
 let base58 = require('bs58');
@@ -15,9 +16,10 @@ export class Utils {
 							0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41]);
 
 		var isValid = false;
+		var pk = new Buffer(0);
 
 		while (!isValid) {
-			var pk = BITBOX.Crypto.randomBytes(32);
+			pk = BITBOX.Crypto.randomBytes(32);
 
 			if(Buffer.compare(n, pk)){
 				isValid = true;

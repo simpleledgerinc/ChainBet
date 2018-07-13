@@ -1,7 +1,10 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-let BITBOX = new BITBOXCli();
+import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
+import { TransactionBuilder } from 'bitbox-cli/lib/TransactionBuilder';
+let BITBOX = <IBITBOXCli> new BITBOXCli();
 
 import { Core } from './core';
+import { AddressDetailsResult } from '../node_modules/bitbox-cli/lib/Address';
 
 export class Wallet {
 
@@ -10,7 +13,7 @@ export class Wallet {
             let ecpair = BITBOX.ECPair.fromWIF(wallet[i].wif);
 			let address = BITBOX.ECPair.toCashAddress(ecpair);
 			console.log("\nChecking " + address + "...");
-            let details = await Core.getAddressDetailsWithRetry(address);
+            let details = <AddressDetailsResult> await Core.getAddressDetailsWithRetry(address);
 			console.log("balance (sat): " + (details.balanceSat + details.unconfirmedBalanceSat));
 			console.log("Unconfirmed Txns: " + details.unconfirmedTxApperances);
         }
@@ -23,7 +26,7 @@ export class Wallet {
             let ecpair = BITBOX.ECPair.fromWIF(wallet[i].wif);
 			let address = BITBOX.ECPair.toCashAddress(ecpair);
 			console.log("\nChecking " + address + "...");
-            let details = await Core.getAddressDetailsWithRetry(address);
+            let details = <AddressDetailsResult> await Core.getAddressDetailsWithRetry(address);
 			console.log("balance (sat): " + (details.balanceSat + details.unconfirmedBalanceSat));
 			console.log("Unconfirmed Txns: " + details.unconfirmedTxApperances);
 			
@@ -44,7 +47,7 @@ export class Wallet {
 			wallet[i].utxo = await Core.getUtxoWithRetry(address);
 	
 			//return new Promise( (resolve, reject) => {
-			let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+			let transactionBuilder = new TransactionBuilder('bitcoincash');
 			let hashType = transactionBuilder.hashTypes.SIGHASH_ALL;
 	
 			let totalUtxo = 0;
@@ -94,7 +97,7 @@ export class Wallet {
 	}
 	
 	static async checkSufficientBalance(address: string) {
-		let addrDetails = await Core.getAddressDetailsWithRetry(address);
+		let addrDetails = <AddressDetailsResult> await Core.getAddressDetailsWithRetry(address);
 		
 		if ((addrDetails.unconfirmedBalanceSat <= 0 && addrDetails.balanceSat == 0) || 
 			(addrDetails.unconfirmedBalanceSat + addrDetails.balanceSat == 0)) {
@@ -109,7 +112,7 @@ export class Wallet {
 	}
 	
 	static async getConfirmedAndUnconfirmedAddressBalance(address: string){
-		let addrDetails = await Core.getAddressDetailsWithRetry(address);
+		let addrDetails = <AddressDetailsResult> await Core.getAddressDetailsWithRetry(address);
 		let total = addrDetails.balanceSat + addrDetails.unconfirmedBalanceSat;
 		return total;
 	}

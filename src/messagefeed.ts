@@ -1,13 +1,6 @@
-//let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-//let BITBOX = new BITBOXCli();
-
-//var chainfeed = require('./chainfeed');
-
 import * as core from './core';
 import { Utils } from './utils';
 import { Chainfeed } from './chainfeed';
-
-//var utils = require('./utils')
 
 interface FeedState {
     connected: boolean;

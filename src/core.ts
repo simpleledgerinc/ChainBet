@@ -1,5 +1,7 @@
-var BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-var BITBOX = new BITBOXCli();
+let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
+import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
+import { TransactionBuilder } from 'bitbox-cli/lib/TransactionBuilder';
+let BITBOX = <IBITBOXCli> new BITBOXCli();
 
 let bip68 = require('bip68');
 
@@ -297,7 +299,7 @@ export class Core {
 		//wallet.utxo = await this.getUtxo(wallet.address);
 		
 		//return new Promise((resolve, reject) => {
-		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+		let transactionBuilder = new TransactionBuilder('bitcoincash');
 		let hashType = transactionBuilder.hashTypes.SIGHASH_ALL;
 
 		let totalUtxo = 0;
@@ -331,7 +333,7 @@ export class Core {
 	static async createEscrow(wallet: any, script: Buffer, betAmount: number){
 		
 		//return new Promise( (resolve, reject) => {
-		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+		let transactionBuilder = new TransactionBuilder('bitcoincash');
 		let hashType = transactionBuilder.hashTypes.SIGHASH_ALL | transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY;
 
 		let totalUtxo = 0;
@@ -378,7 +380,7 @@ export class Core {
     
 		let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
 		//let participantKey = BITBOX.ECPair.fromWIF(client.wif)
-		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
+		let transactionBuilder = new TransactionBuilder('bitcoincash');
 
 		let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
 		let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });

@@ -1,7 +1,8 @@
 import * as chainbet from 'chainbet';
 
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-let BITBOX = new BITBOXCli();
+import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
+let BITBOX = <IBITBOXCli> new BITBOXCli();
 
 import * as fs from 'fs';
 let context = require('commander');
@@ -25,18 +26,12 @@ async function main() {
         // check if wallet.json file exists
         if(fs.existsSync('./wallet.json')) {
             if (selection.mode == 'generate') {
-                console.log("\nGenerating a new address...");
+                console.log("\nGenerating a new bitcoin address...\n");
                 var wif = chainbet.Utils.getNewPrivKeyWIF();
                 wallet = jsonfile.readFileSync('./wallet.json');
                 wallet.push({ 'wif' : wif });
                 jsonfile.writeFileSync("./wallet.json", wallet, 'utf8');
             }
-        }
-        else if(!fs.existsSync('./wallet.json')) {
-            console.log("\nGenerating a new address and wallet.json file...");
-            var wif = chainbet.Utils.getNewPrivKeyWIF();
-            fs.writeFileSync('./wallet.json', "", 'utf8');
-            jsonfile.writeFileSync("./wallet.json", [{ 'wif': wif }], 'utf8');
         }
 
         wallet = jsonfile.readFileSync('./wallet.json');
@@ -113,7 +108,7 @@ async function main() {
                 message: "Enter a withdraw address: ",
                 validate: 
                     function(input: string){ 
-                        if(BITBOX.Address.isCashAddress(input) || BITBOX.isLegacyAddress(input)) 
+                        if(BITBOX.Address.isCashAddress(input) || BITBOX.Address.isLegacyAddress(input)) 
                             return true; 
                         return false; 
                     }
@@ -136,6 +131,13 @@ async function main() {
 }
 
 async function promptMainMenu() {
+
+    if(!fs.existsSync('./wallet.json')) {
+        console.log("\nGenerating a new address and wallet.json file...");
+        var wif = chainbet.Utils.getNewPrivKeyWIF();
+        fs.writeFileSync('./wallet.json', "", 'utf8');
+        jsonfile.writeFileSync("./wallet.json", [{ 'wif': wif }], 'utf8');
+    }
 
     console.log('\n-------------------------------------------------------------------------------');
     console.log("|                        Welcome to Satoshi's Dice!                           |");

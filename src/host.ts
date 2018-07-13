@@ -1,5 +1,6 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-let BITBOX = new BITBOXCli();
+import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
+let BITBOX = <IBITBOXCli> new BITBOXCli();
 
 let base58 = require('bs58');
 import { Utils } from './utils';
