@@ -6,7 +6,6 @@
   "types": "./lib/chainbet.d.ts",
   "scripts": {
     "build": "tsc",
-    "postbuild": "cp -R node_modules lib/node_modules",
     "test": "nyc mocha --require babel-core/register",
     "test-ts": "nyc mocha --require ts-node/register --require source-map-support/register --full-trace --bail src/**/*.spec.ts"
   },
