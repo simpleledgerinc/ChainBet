@@ -1,10 +1,12 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
-import { TransactionBuilder } from 'bitbox-cli/lib/TransactionBuilder';
 let BITBOX = <IBITBOXCli> new BITBOXCli();
 
+let TransactionBuilder = require('bitbox-cli/lib/TransactionBuilder').default;
+import { ITransactionBuilder } from 'bitbox-cli/lib/TransactionBuilder';
+
 import { Core } from './core';
-import { AddressDetailsResult } from '../node_modules/bitbox-cli/lib/Address';
+import { AddressDetailsResult } from 'bitbox-cli/lib/Address';
 
 export class Wallet {
 
@@ -47,7 +49,7 @@ export class Wallet {
 			wallet[i].utxo = await Core.getUtxoWithRetry(address);
 	
 			//return new Promise( (resolve, reject) => {
-			let transactionBuilder = new TransactionBuilder('bitcoincash');
+			let transactionBuilder = <ITransactionBuilder> new TransactionBuilder('bitcoincash');
 			let hashType = transactionBuilder.hashTypes.SIGHASH_ALL;
 	
 			let totalUtxo = 0;

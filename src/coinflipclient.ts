@@ -1,7 +1,9 @@
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
 import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
-import { TransactionBuilder } from 'bitbox-cli/lib/TransactionBuilder';
 let BITBOX = <IBITBOXCli> new BITBOXCli();
+
+let TransactionBuilder = require('bitbox-cli/lib/TransactionBuilder').default;
+import { ITransactionBuilder } from 'bitbox-cli/lib/TransactionBuilder';
 
 var inquirer = require('inquirer');
 
@@ -10,8 +12,7 @@ import { Utils } from './utils';
 import { Client } from './client';
 import { MessageFeed } from './messagefeed';
 import { CoinFlipShared } from './coinflipshared';
-import { AddressDetails } from '../node_modules/bitbox-cli/lib/Util';
-import { AddressDetailsResult } from '../node_modules/bitbox-cli/lib/Address';
+import { AddressDetailsResult } from 'bitbox-cli/lib/Address';
 
 export class CoinFlipClient extends Client {
     wallet: WalletKey;
@@ -280,7 +281,7 @@ export class CoinFlipClient extends Client {
         let purseAmount = Core.purseAmount(betAmount);
 
         let clientKey = BITBOX.ECPair.fromWIF(wallet.wif)
-        let transactionBuilder = new TransactionBuilder('bitcoincash');
+        let transactionBuilder = <ITransactionBuilder> new TransactionBuilder('bitcoincash');
 
         let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
 
