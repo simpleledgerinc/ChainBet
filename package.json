@@ -47,7 +47,7 @@
     "@types/node": "^10.5.2",
     "@types/chai": "^4.1.4",
     "@types/mocha": "^5.2.4",
-    "@types/assert":"~0.0.31",
+    "@types/assert": "^0.0.31",
     "assert": "^1.4.1",
     "babel-core": "^6.26.3",
     "chai": "^4.1.2",

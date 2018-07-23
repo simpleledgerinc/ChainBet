@@ -1,9 +1,6 @@
-let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
-let BITBOX = <IBITBOXCli> new BITBOXCli();
-
-let TransactionBuilder = require('bitbox-cli/lib/TransactionBuilder').default;
-import { ITransactionBuilder } from 'bitbox-cli/lib/TransactionBuilder';
+import IBITBOXCli from 'bitbox-cli/lib/bitbox-cli';
+let BITBOXCli = <IBITBOXCli> require('bitbox-cli/lib/bitbox-cli').default;
+let BITBOX = new BITBOXCli();
 
 var inquirer = require('inquirer');
 
@@ -299,7 +296,7 @@ export class CoinFlipHost extends Host {
 
         let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
         //let clientKey = BITBOX.ECPair.fromWIF(client.wif)
-        let transactionBuilder = <ITransactionBuilder> new TransactionBuilder('bitcoincash');
+        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
         let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
         let satoshisAfterFee = Core.purseAmount(betAmount);
@@ -389,7 +386,7 @@ export class CoinFlipHost extends Host {
         let purseAmount = Core.purseAmount(betAmount);
 
         let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
-        let transactionBuilder = <ITransactionBuilder> new TransactionBuilder('bitcoincash');
+        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
         let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
         let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
@@ -444,7 +441,7 @@ export class CoinFlipHost extends Host {
     static async hostClaimWinTimeout(wallet: WalletKey, betScript: Buffer, betTxId: string, betAmount: number): Promise<string>{
 
         let hostKey = BITBOX.ECPair.fromWIF(wallet.wif)
-        let transactionBuilder = <ITransactionBuilder> new TransactionBuilder('bitcoincash');
+        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
         let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
         let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });

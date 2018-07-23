@@ -1,9 +1,6 @@
-let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
-let BITBOX = <IBITBOXCli> new BITBOXCli();
-
-let TransactionBuilder = require('bitbox-cli/lib/TransactionBuilder').default;
-import { ITransactionBuilder } from 'bitbox-cli/lib/TransactionBuilder';
+import IBITBOXCli from 'bitbox-cli/lib/bitbox-cli';
+let BITBOXCli = <IBITBOXCli> require('bitbox-cli/lib/bitbox-cli').default;
+let BITBOX = new BITBOXCli();
 
 var inquirer = require('inquirer');
 
@@ -281,7 +278,7 @@ export class CoinFlipClient extends Client {
         let purseAmount = Core.purseAmount(betAmount);
 
         let clientKey = BITBOX.ECPair.fromWIF(wallet.wif)
-        let transactionBuilder = <ITransactionBuilder> new TransactionBuilder('bitcoincash');
+        let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
         let byteCount = BITBOX.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2SH: 1 });
 

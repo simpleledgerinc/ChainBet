@@ -1,5 +1,5 @@
+import IBITBOXCli from 'bitbox-cli/lib/bitbox-cli';
 let BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-import { IBITBOXCli } from 'bitbox-cli/lib/bitbox-cli';
 let BITBOX = <IBITBOXCli> new BITBOXCli();
 
 let node_crypto = require('crypto');
