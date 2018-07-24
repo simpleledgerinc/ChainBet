@@ -1,6 +1,6 @@
 {
   "name": "chainbet",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Methods for the ChainBet protocol",
   "main": "./lib/chainbet.js",
   "types": "./lib/chainbet.d.ts",
