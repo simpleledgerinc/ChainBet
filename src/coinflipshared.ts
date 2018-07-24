@@ -1,5 +1,4 @@
-import IBITBOXCli from 'bitbox-cli/lib/bitbox-cli';
-let BITBOXCli = <IBITBOXCli> require('bitbox-cli/lib/bitbox-cli').default;
+import BITBOXCli from 'bitbox-cli/lib/bitbox-cli';
 let BITBOX = new BITBOXCli();
 
 import { Core, WalletKey } from './core';
@@ -170,7 +169,7 @@ export class CoinFlipShared {
 	
 	static createEscrowSignature(wallet: WalletKey, escrowTxId: string, escrowScript: Buffer, betAmount: number, betScript: Buffer): Buffer{
 		let clientKey = BITBOX.ECPair.fromWIF(wallet.wif)
-		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');//new <ITransactionBuilder> new TransactionBuilder('bitcoincash')('bitcoincash');
+		let transactionBuilder = new BITBOX.TransactionBuilder('bitcoincash');
 
 		let hashType = 0xc1 // transactionBuilder.hashTypes.SIGHASH_ANYONECANPAY | transactionBuilder.hashTypes.SIGHASH_ALL
 		let satoshisAfterFee = Core.purseAmount(betAmount);

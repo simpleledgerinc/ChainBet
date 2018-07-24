@@ -41,10 +41,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var chainbet = __importStar(require("chainbet"));
-var BITBOXCli = require('bitbox-cli/lib/bitbox-cli').default;
-var BITBOX = new BITBOXCli();
+var bitbox_cli_1 = __importDefault(require("bitbox-cli/lib/bitbox-cli"));
+var BITBOX = new bitbox_cli_1.default();
 var fs = __importStar(require("fs"));
 var context = require('commander');
 var inquirer = __importStar(require("inquirer"));

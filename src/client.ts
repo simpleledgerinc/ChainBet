@@ -1,6 +1,4 @@
-import IBITBOXCli from 'bitbox-cli/lib/bitbox-cli';
-
-let BITBOXCli = <IBITBOXCli> require('bitbox-cli/lib/bitbox-cli').default;
+import BITBOXCli from 'bitbox-cli/lib/bitbox-cli';
 let BITBOX = new BITBOXCli();
 
 export class Client {
