@@ -6,25 +6,27 @@ import { Core, WalletKey } from './core';
 export class CoinFlipShared {
 
 	static buildCoinFlipBetScriptBuffer(hostPubKey: Buffer, 
-		hostCommitment: Buffer, clientPubKey: Buffer, clientCommitment: Buffer): Buffer{
+		hostCommitment: Buffer, clientPubKey: Buffer, clientCommitment: Buffer): Buffer {
 		
 		let script = [
 			BITBOX.Script.opcodes.OP_IF,
 			BITBOX.Script.opcodes.OP_IF,
 			BITBOX.Script.opcodes.OP_DUP,
 			BITBOX.Script.opcodes.OP_HASH160,
-			clientCommitment.length
+			//clientCommitment.length
 		];
 		
-		clientCommitment.forEach(i => script.push(i));
-	
+		//clientCommitment.forEach(i => script.push(i));
+		script.push(clientCommitment);
+
 		script = script.concat([
 			BITBOX.Script.opcodes.OP_EQUALVERIFY,
 			BITBOX.Script.opcodes.OP_OVER,
 			BITBOX.Script.opcodes.OP_HASH160,
-			hostCommitment.length
+			//hostCommitment.length
 		]);
-		hostCommitment.forEach(i => script.push(i));
+		//hostCommitment.forEach(i => script.push(i));
+		script.push(hostCommitment);
 
 		script = script.concat([
 			BITBOX.Script.opcodes.OP_EQUALVERIFY,
@@ -48,28 +50,31 @@ export class CoinFlipShared {
 			BITBOX.Script.opcodes.OP_CHECKSEQUENCEVERIFY,
 			BITBOX.Script.opcodes.OP_DROP,
 			BITBOX.Script.opcodes.OP_ENDIF,
-			hostPubKey.length
+			//hostPubKey.length
 		]);
 		
-		hostPubKey.forEach(i => script.push(i));
-	
+		//hostPubKey.forEach(i => script.push(i));
+		script.push(hostPubKey);
+
 		script = script.concat([
 			BITBOX.Script.opcodes.OP_CHECKSIG,
 			BITBOX.Script.opcodes.OP_ELSE,
 			BITBOX.Script.opcodes.OP_DUP,
 			BITBOX.Script.opcodes.OP_HASH160,
-			clientCommitment.length
+			//clientCommitment.length
 		]);
-		clientCommitment.forEach(i => script.push(i));
-	
+		//clientCommitment.forEach(i => script.push(i));
+		script.push(clientCommitment);
+
 		script = script.concat([
 			BITBOX.Script.opcodes.OP_EQUALVERIFY,
 			BITBOX.Script.opcodes.OP_OVER,
 			BITBOX.Script.opcodes.OP_HASH160,
-			hostCommitment.length
+			//hostCommitment.length
 		]);
-		hostCommitment.forEach(i => script.push(i));
-	
+		//hostCommitment.forEach(i => script.push(i));
+		script.push(hostCommitment);
+
 		script = script.concat([
 			BITBOX.Script.opcodes.OP_EQUALVERIFY,
 			BITBOX.Script.opcodes.OP_4,
@@ -86,10 +91,11 @@ export class CoinFlipShared {
 			BITBOX.Script.opcodes.OP_MOD,
 			BITBOX.Script.opcodes.OP_0,
 			BITBOX.Script.opcodes.OP_EQUALVERIFY,
-			clientPubKey.length
+			//clientPubKey.length
 		]);
-		clientPubKey.forEach(i => script.push(i));
-	
+		//clientPubKey.forEach(i => script.push(i));
+		script.push(clientPubKey);
+
 		script = script.concat([
 			BITBOX.Script.opcodes.OP_CHECKSIG,
 			BITBOX.Script.opcodes.OP_ENDIF,
@@ -103,21 +109,24 @@ export class CoinFlipShared {
         let script = [
             BITBOX.Script.opcodes.OP_IF, 
             BITBOX.Script.opcodes.OP_HASH160,
-            hostCommitment.length
+            //hostCommitment.length
         ];
         
-        hostCommitment.forEach(i => script.push(i));
-    
+        //hostCommitment.forEach(i => script.push(i));
+		script.push(hostCommitment);
+		
         script = script.concat([
             BITBOX.Script.opcodes.OP_EQUALVERIFY,
             BITBOX.Script.opcodes.OP_2,
-            hostPubKey.length
+            //hostPubKey.length
         ]);
         
-        hostPubKey.forEach(i => script.push(i));
-        script.push(clientPubKey.length);
-        clientPubKey.forEach(i => script.push(i));
-    
+		//hostPubKey.forEach(i => script.push(i));
+		script.push(hostPubKey);
+
+        //script.push(clientPubKey.length);
+        //clientPubKey.forEach(i => script.push(i));
+		script.push(clientPubKey);
         script = script.concat([
             BITBOX.Script.opcodes.OP_2,
             BITBOX.Script.opcodes.OP_CHECKMULTISIG,
@@ -125,10 +134,12 @@ export class CoinFlipShared {
             0x58, // use 0x58 for 8 blocks
             BITBOX.Script.opcodes.OP_CHECKSEQUENCEVERIFY,
             BITBOX.Script.opcodes.OP_DROP,
-            hostPubKey.length
+            //hostPubKey.length
         ]);
     
-        hostPubKey.forEach(i => script.push(i));
+		//hostPubKey.forEach(i => script.push(i));
+		script.push(hostPubKey);
+
         script = script.concat([
             BITBOX.Script.opcodes.OP_CHECKSIG,
             BITBOX.Script.opcodes.OP_ENDIF
@@ -141,13 +152,15 @@ export class CoinFlipShared {
         let script = [
             BITBOX.Script.opcodes.OP_IF, 
             BITBOX.Script.opcodes.OP_2,
-            hostPubKey.length
+            //hostPubKey.length
         ]
         
-        hostPubKey.forEach(i => script.push(i));
-        script.push(clientPubKey.length);
-        clientPubKey.forEach(i => script.push(i));
-    
+		//hostPubKey.forEach(i => script.push(i));
+		script.push(hostPubKey);
+
+        //script.push(clientPubKey.length);
+        //clientPubKey.forEach(i => script.push(i));
+		script.push(clientPubKey);
         script = script.concat([
             BITBOX.Script.opcodes.OP_2,
             BITBOX.Script.opcodes.OP_CHECKMULTISIG,
@@ -155,10 +168,11 @@ export class CoinFlipShared {
             0x58, // use 0x58 for 8 blocks
             BITBOX.Script.opcodes.OP_CHECKSEQUENCEVERIFY,
             BITBOX.Script.opcodes.OP_DROP,
-            clientPubKey.length
+            //clientPubKey.length
         ]);
     
-        clientPubKey.forEach(i => script.push(i));
+		//clientPubKey.forEach(i => script.push(i));
+		script.push(clientPubKey);
         script = script.concat([
             BITBOX.Script.opcodes.OP_CHECKSIG,
             BITBOX.Script.opcodes.OP_ENDIF
